@@ -67,6 +67,14 @@ print("\n".join(log[-7:]))
 # ---- S1 total demand (confounded by ETH rally; upper bound on magnitude) --------------------------------
 S1 = event_estimate(panel, day, T_PECTRA, w=W, activity="none_all")
 show("S1 total demand: no activity offset, all labelled rollups active across window", S1, "rollup x day")
+pl1 = []
+for tau in days:
+    r = event_estimate(panel, day, tau, w=W, activity="none_all", twoway=False)
+    pl1.append(r["beta"])
+pl1 = np.array(pl1)
+p_beta_s1 = (np.abs(pl1) >= abs(S1["beta"])).mean()
+log.extend([f"S1 placebo-date permutation ({len(pl1)} dates, same rule): two-sided p = {p_beta_s1:.3f}; "
+            f"placebo beta sd {pl1.std():.4f}.", ""])
 # S1b: 'unknown' added as one extra unit (DECISIONS D-06)
 c = con()
 unk = c.sql(f"SELECT date, n_blobs FROM '{DATA / 'rollup_day_panel.parquet'}' WHERE is_unknown").df()
@@ -132,3 +140,16 @@ fig.tight_layout(rect=(0, 0.04, 1, 1))
 for ext in ("pdf", "png"):
     fig.savefig(FIG / f"fig2_placebo.{ext}", dpi=200)
 print("done")
+
+from common import save_numbers
+save_numbers("04_headline", {
+    **{f"head_{k}": v for k, v in H.items() if k != "rollups"},
+    "head_ci_eta_lo": H["eta"] - 1.96 * H["se_eta"], "head_ci_eta_hi": H["eta"] + 1.96 * H["se_eta"],
+    "head_ci_eps_lo": (H["eta"] - 1.96 * H["se_eta"]) * H["p_pre"], "head_ci_eps_hi": (H["eta"] + 1.96 * H["se_eta"]) * H["p_pre"],
+    "head_usd_pre": H["p_pre"] * H["ethusd_pre"] / 1000,
+    "perm_p_beta": p_beta, "perm_p_eta": p_eta, "n_placebo": len(pl), "placebo_sd_beta": pl.beta.std(),
+    "placebo_lo": str(pl.tau.min()), "placebo_hi": str(pl.tau.max()),
+    **{f"s1_{k}": v for k, v in S1.items() if k != "rollups"}, "s1_perm_p": p_beta_s1, "s1b_beta": S1b["beta"], "unk_share_window": unk_share,
+    **({f"s2_{k}": v for k, v in S2.items() if k != "rollups"} if S2 else {}),
+    **{f"s5_elast_floor_{int(r.hypothetical_floor_wei)}": r.log_price_elasticity for r in S5.itertuples()},
+})

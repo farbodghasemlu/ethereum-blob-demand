@@ -94,3 +94,9 @@ fig.tight_layout(rect=(0, 0.02, 0.97, 1))
 for ext in ("pdf", "png"):
     fig.savefig(FIG / f"fig1_market_timeseries.{ext}", dpi=200)
 print("wrote fig1")
+
+from common import save_numbers
+save_numbers("03_descriptives", {f"{r.regime}_{k}": getattr(r, k) for r in t1.itertuples() for k in
+                                 ("blocks", "blobs_per_block", "utilization_vs_target", "share_blocks_at_floor",
+                                  "share_blocks_at_max", "price_block_median_wei", "fees_eth", "fees_usd",
+                                  "unknown_share_blobs", "usd_per_blob_paid", "blob_txs", "blobs", "rollups_active")})

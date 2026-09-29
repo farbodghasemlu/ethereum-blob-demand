@@ -100,3 +100,13 @@ save(df, "da_cross_coverage", "Celestia columns in da_cross_daily",
 
 (LOG / "01_data_audit.md").write_text("\n".join(md))
 print(f"\nwrote {LOG / '01_data_audit.md'}")
+
+from common import save_numbers
+u = c.sql(f"""SELECT CASE WHEN grouping(regime) = 1 THEN 'ALL' ELSE coalesce(regime, 'undated') END AS regime, avg((rollup = 'unknown')::INT) AS tx,
+                     sum(blob_count) FILTER (WHERE rollup = 'unknown') / sum(blob_count) AS blobs,
+                     sum(blob_fee_wei) FILTER (WHERE rollup = 'unknown') / sum(blob_fee_wei) AS fees
+              FROM '{BLOB_TXS}' GROUP BY ROLLUP (regime)""").df().set_index("regime")
+pf_ = c.sql(f"""SELECT count(*) AS n, avg((abs(observed_blob_gas_price_wei - computed_blob_base_fee_wei)
+                       <= greatest(1e-3 * observed_blob_gas_price_wei, 1))::INT) AS agree FROM '{BLOB_TXS}' WHERE regime IS NOT NULL""").df()
+save_numbers("01_audit", {**{f"unk_{m}_{r}": u.loc[r, m] for r in u.index for m in ("tx", "blobs", "fees")},
+                          "price_agree_share": pf_.agree[0], "n_blob_txs_dated": pf_.n[0]})

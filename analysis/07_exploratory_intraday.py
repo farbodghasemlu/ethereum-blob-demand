@@ -70,3 +70,10 @@ log += ["", "Interpretation: elasticity of within-day posting timing with respec
         "if intraday L1 congestion co-moves with intraday L2 activity."]
 (LOG / "07_exploratory_intraday.md").write_text("\n".join(log) + "\n")
 print("\n".join(log))
+
+from common import save_numbers
+b, p_ = res.set_index("outcome").loc["blobs"], res.set_index("outcome").loc["posts"]
+save_numbers("07_intraday", {"beta_blobs": b.beta, "se_blobs": b.se_rollup, "se2_blobs": b.se_twoway, "n_obs": b.n_obs,
+                             "beta_posts": p_.beta, "se_posts": p_.se_rollup, "fs_pi": b.fs_pi, "fs_se": b.fs_se,
+                             "within_day_sd": wd, "share_reserve_above": hr.share_reserve_above.mean(),
+                             "mean_price": hr.p_meth.mean()})

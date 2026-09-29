@@ -144,3 +144,13 @@ fig.tight_layout(rect=(0, 0.05, 1, 1))
 for ext in ("pdf", "png"):
     fig.savefig(FIG / f"fig4_heterogeneity.{ext}", dpi=200)
 print("done")
+
+from common import save_numbers
+save_numbers("05_spec_curve", {
+    "n_specs_total": len(sc), "n_specs_intensity": int((sc.activity != "none").sum()), "head_pctile": pct,
+    **{f"int_{k}": v for k, v in summ(sc[sc.activity != "none"]).items()},
+    **{f"off_{k}": v for k, v in summ(sc[sc.activity == "offset"]).items()},
+    **{f"tot_{k}": v for k, v in summ(sc[sc.activity == "none"]).items()},
+    "het_n": len(het), "het_n_pos": int((het.beta > 0).sum()), "het_mean_beta": het.beta.mean(),
+    "het_base_beta": het.set_index("rollup").beta.get("base"), "het_degenerate": ", ".join(degenerate),
+})

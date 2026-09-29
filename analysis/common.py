@@ -38,3 +38,12 @@ def con() -> duckdb.DuckDBPyConnection:
     c = duckdb.connect()
     c.execute("SET threads TO 8")
     return c
+
+NUM = OUT / "numbers"          # key results per script, consumed by the paper renderer
+NUM.mkdir(parents=True, exist_ok=True)
+
+
+def save_numbers(name: str, values: dict) -> None:
+    import json, numpy as np
+    conv = lambda v: v.item() if isinstance(v, np.generic) else (str(v) if hasattr(v, "isoformat") else v)
+    (NUM / f"{name}.json").write_text(json.dumps({k: conv(v) for k, v in values.items()}, indent=1) + "\n")

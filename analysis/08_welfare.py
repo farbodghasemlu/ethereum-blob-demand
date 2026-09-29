@@ -113,3 +113,23 @@ lines += ["", f"Benchmark: detrended SD of ln(aggregate L2 txs), same period, N 
 log += ["## (d) Consistency: congestion-phase price volatility vs demand elasticity", ""] + lines + [""]
 (LOG / "08_welfare.md").write_text("\n".join(log) + "\n")
 print("\n".join(log))
+
+from common import save_numbers
+dd = tr.set_index("period")
+dw = dwl.set_index("eta_label")
+save_numbers("08_welfare", {
+    **{f"eta_{i}": v for i, v in enumerate(ETA.values())},
+    "fees_dencun_eth": tr[tr.regime == "dencun"].fees_eth.sum(), "fees_dencun_usd": tr[tr.regime == "dencun"].fees_usd.sum(),
+    "fees_pectra_eth": dd.loc["pectra", "fees_eth"], "fees_pectra_usd": dd.loc["pectra", "fees_usd"],
+    "fees_reserve_eth": tr[tr.regime.isin(["fusaka", "bpo1", "bpo2"])].fees_eth.sum(),
+    "fees_reserve_usd": tr[tr.regime.isin(["fusaka", "bpo1", "bpo2"])].fees_usd.sum(),
+    "fees_cong_share_dencun": dd.loc[["2024-Q4", "2025-Q1"], "fees_eth"].sum() / tr[tr.regime == "dencun"].fees_eth.sum(),
+    "fees_2024q3_eth": dd.loc["2024-Q3", "fees_eth"],
+    "dwl_max_eth": dw.dwl_eth.max(), "dwl_max_usd": dw.dwl_usd.max(), "dwl_ci_eth": dw.loc["headline 95% CI, elastic bound", "dwl_eth"],
+    "dwl_ci_usd": dw.loc["headline 95% CI, elastic bound", "dwl_usd"], "dwl_max_share": dw.dwl_as_share_of_fees.max(),
+    "reserve_days": int(dw.days.iloc[0]), "reserve_util": dw.mean_util_vs_target.iloc[0],
+    "pectra_fee_pre_eth_day": cap.fees_eth_per_day.iloc[0], "pectra_fee_pre_usd_day": cap.fees_usd_per_day.iloc[0],
+    "pectra_fee_post_eth_day": cap.fees_eth_per_day.iloc[1],
+    "cong_sd_p": sd_p, "cong_mean_p": cong.p.mean(), "l2_resid_sd": resid_sd, "implied_eta": resid_sd / sd_p,
+    "implied_shift_sd_ci": abs(ETA["headline 95% CI, elastic bound"]) * sd_p, "implied_shift_sd_p5": abs(ETA["spec curve DA-intensity p5"]) * sd_p,
+})

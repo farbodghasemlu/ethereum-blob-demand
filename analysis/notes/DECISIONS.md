@@ -150,3 +150,26 @@ Result: DWL ≤ 2.6 ETH (≈$8k) over 296 reserve-regime days even at the most e
 first-order welfare effect is distributional: 4,704 ETH ($14.8M) of Dencun fees, 67% of them in 2024-Q4 and
 2025-Q1. An independent scale check (price volatility in congested quarters vs detrended L2-activity
 volatility) implies |η| ≈ 0.07 per mETH/blob, inside the spec-curve range and near the headline CI.
+
+**D-24 · CORRECTION to D-14's reasoning (not to PRESPEC).** D-14 argued the omitted pass-through margin was small
+because DA cost was ~$0.0016 per L2 tx. Compared with L2 fees, that is not small. For OP-Stack chains, pre-Pectra
+DA cost per tx was of the same order as the whole median L2 tx fee (World $0.0061 vs $0.0019; Base $0.0016 vs
+$0.0022), and median fees fell 0.6–1.9 log points at Pectra, while non-blob chains' fees rose 0.1–0.3 with the
+ETH price. Blob users' L2 activity also rose more than non-blob chains' activity. The DA-intensity headline
+remains a correctly defined estimand (the rollup's own margin), so PRESPEC is not revised. Its interpretation
+changes: it is not the total demand response. The total response (S1, +0.19 log points, permutation p < 0.002)
+plausibly contains a genuine price effect through L2 fees and L2 activity, not only the rally. Addressed by a
+POST-HOC analysis (script 10), labelled as such, with non-blob chains as a control group so that day fixed
+effects absorb common shocks.
+
+**D-25 · Post-hoc pass-through design (script 09): control group and classification.** Treated: the headline's
+blob-DA rollups (growthepie keys) minus Mantle, whose DA is EigenDA (22 blobs in the window). Controls: L2s and
+sidechains not buying Ethereum blobs in the window: Arbitrum Nova (AnyTrust), Celo and Mantle (EigenDA), Manta
+(Celestia), Gravity (AnyTrust), Plume (external DA), Polygon PoS and Ronin (own chains). Excluded: Ethereum L1
+(directly treated by Pectra's other EIPs), Metis (moved to blobs at Pectra), Fraxtal (DA unclear; its batcher may
+be among 'unknown'). Chains lacking complete txcount/fee data in the window drop out by rule (Arbitrum Nova,
+zkSync Era), leaving 13 vs 7. Alternatives: a narrower ETH-gas-only control group (Manta alone) is too small to
+use; Ethereum L1 as a control is contaminated. Fee outcome in ETH, so ETH/USD does not enter; non-ETH-gas
+controls' fees move with their own tokens, which adds noise. Results: activity +0.28 (SE 0.11, placebo p =
+0.097); fees −0.37 (SE 0.20, placebo p = 0.35). Reported as suggestive only. A reviewer could reasonably classify Plume and Gravity differently. Dropping them (5 controls): activity
++0.26 (SE 0.11), fees −0.44 (SE 0.20); insensitive.
