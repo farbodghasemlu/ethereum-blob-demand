@@ -18,7 +18,7 @@ with chains that do not buy blobs suggests the rise came through L2 fees and L2 
 demand. That evidence is suggestive, not conclusive (placebo p = {pt[p_act]:.2f}). Mempool data show that at the 1-wei floor blob transactions are
 not rationed by queueing: waits are shortest there, and almost no transaction is priced out. With demand this
 inelastic, the controller's first-order effect is distributional. Of the {w[fees_dencun_eth]:,.0f} ETH
-(${w[fees_dencun_usd]:,.0f}) burned under Dencun, {w[fees_cong_share_dencun]:.0%} was paid in two congested
+(${w[fees_dencun_usd_m]:.1f}M) burned under Dencun, {w[fees_cong_share_dencun]:.0%} was paid in two congested
 quarters. The deadweight loss of the post-Fusaka reserve price is at most {w[dwl_max_eth]:.1f} ETH even under
 the most elastic demand we cannot rule out.
 
@@ -139,9 +139,9 @@ depends on the arbitrary floor level: the same β gives {h[s5_elast_floor_1]:.4f
 
 **Fragility (Figure 3).** Across {sc[n_specs_intensity]} DA-intensity specifications, the median η is
 {sc[int_eta_median]:.3f} and the 5th–95th percentile range is {sc[int_eta_p05]:.3f} to {sc[int_eta_p95]:.3f}.
-{sc[int_share_beta_sig5]:.0%} are significant at 5% under cluster-robust SEs that the placebo test shows are too
-small. None of the {sc[off_n_specs]:.0f} specifications with activity as an offset is significant. The headline sits
-at the {sc[head_pctile]:.0%} percentile, on the inelastic side. The median specification implies an elasticity
+{sc[int_share_beta_sig5]:.0%} are significant at 5% under cluster-robust SEs. The placebo test shows those SEs are too
+small: the placebo SD of β is {h[placebo_sd_beta]:.3f}, against a clustered SE of {h[head_se_beta_rollup]:.3f}. None of the {sc[off_n_specs]:.0f} specifications with activity as an offset is significant. The headline is
+less elastic than {sc[head_pctile]:.0%} of these specifications. The median specification implies an elasticity
 of {sc[int_eps_median]:.3f} at the pre-shock price. Either way, demand at the direct margin is very inelastic.
 
 **Heterogeneity (Figure 4).** {sc[het_n_pos]} of {sc[het_n]} rollups with a defined estimate have β > 0 (the
@@ -149,8 +149,8 @@ equal-weighted mean is {sc[het_mean_beta]:.3f}). The volume-weighted pooled esti
 (β = {sc[het_base_beta]:.3f}).
 
 **Total demand.** Without normalizing by activity, blobs rose by β = {h[s1_beta]:.3f} (SE {h[s1_se_beta_rollup]:.3f})
-across {h[s1_n_rollups]} rollups. This is larger than at any of the {h[n_placebo]} placebo dates (p =
-{h[s1_perm_p]:.3f}). With DA intensity unchanged, the rise is a rise in L2 activity. Whether that activity rise
+across {h[s1_n_rollups]} rollups. This is larger than at every one of the {h[n_placebo]} placebo dates
+(permutation p < {pinv:.3f}). With DA intensity unchanged, the rise is a rise in L2 activity. Whether that activity rise
 is a price response or the ETH rally is the question of Section 6b.
 
 ## 6b. Derived demand: pass-through to L2 fees (post hoc)
@@ -206,8 +206,15 @@ Within day and rollup, the floor changes the probability of missing the first bl
 {mp[reg_dencun_waited_b_floor]:+.3f} (SE {mp[reg_dencun_waited_se_floor]:.3f}), against a base of
 {mp[reg_dencun_waited_mean_base]:.2f}.
 
-Delay is common in every state and is not explained by price or capacity. We attribute it to block-building
-practice, not rationing. The floor regime is a regime of slack, not of queues.
+Missing the very next block is common in every state, largely because inclusion takes time to build (our
+first-opportunity definition allows no build latency). Among floor transactions that were delayed:
+- {mp[dencun_floor_share_delayed_txs_never_capacity_or_price_constrained]:.0%} were passed over only by blocks
+  with room for them, and were never priced out;
+- the rest met at least one full block, because usage bursts reach the maximum even when the excess is zero.
+
+Either way the delay is about one block, about 12 seconds. Price rationing does appear in congested Dencun
+states, where {mp[dencun_cong_share_passed_blocks_priced_out]:.0%} of passed-over blocks priced the transaction
+out. The floor regime is a regime of slack, not of queues.
 
 ## 8. Welfare
 
@@ -224,7 +231,7 @@ These bounds already cover the activity margin of Section 6b. Its implied semi-e
 derived-demand channel does not change the conclusion.
 
 **Distributional effect.** The rule's first-order effect is distributional:
-- {w[fees_dencun_eth]:,.0f} ETH (${w[fees_dencun_usd]:,.0f}) burned under Dencun, {w[fees_cong_share_dencun]:.0%}
+- {w[fees_dencun_eth]:,.0f} ETH (${w[fees_dencun_usd_m]:.1f}M) burned under Dencun, {w[fees_cong_share_dencun]:.0%}
   of it in 2024-Q4 and 2025-Q1;
 - {w[fees_pectra_eth]:.1f} ETH under Pectra;
 - {w[fees_reserve_eth]:.1f} ETH across all reserve regimes.
@@ -237,9 +244,9 @@ mechanisms we can compare differ mainly in who pays, not in who is served.
 
 - **Uniform-price auction at the same target.** In slack periods it would clear at zero, as the floor
   effectively does. In congested periods it would clear where demand meets the target, as the controller does
-  on average, but without the controller's lagged, exponential adjustment. That adjustment is what produces the
-  large price volatility in Section 6 (daily SD {w[cong_sd_p]:.2f} mETH/blob around a mean of
-  {w[cong_mean_p]:.2f}).
+  on average. Because demand is this inelastic, any mechanism that clears fixed capacity would produce volatile
+  prices; the congested-quarter SD was {w[cong_sd_p]:.2f} mETH/blob around a mean of {w[cong_mean_p]:.2f}. The
+  controller adds lag and overshooting, and we do not separate the two components.
 - **Fixed posted price.** A price below the clearing level in congested periods would force rationing by other
   means (priority fees, delay). A price above it in slack periods would forgo usage worth only the Harberger
   triangles of Section 8.

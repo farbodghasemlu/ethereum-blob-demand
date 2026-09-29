@@ -94,7 +94,9 @@ carry 82% of the window's blobs).
 hash as raw bytes (so it never joined to `blob_txs.hash`), kept one row per sensor sighting, and marked failed
 days as done so they were never retried. Fixed: hash/address decoded to text, fee caps kept as hex (they are
 16-byte little-endian UInt128), one row per tx with the earliest sighting and the number of sensors, and
-failures retried. Script 09 `rm -rf`s its output directory, which would destroy `release/`. The new deposit
+failures retried. The collector's single DuckDB instance later grew to 25 GB RSS on the 1.6 GB daily files
+from mid-2025; it was stopped, capped (memory_limit 4 GB, external file cache off) and resumed from its checkpoint
+with no day lost. Script 09 `rm -rf`s its output directory, which would destroy `release/`. The new deposit
 version is therefore packaged into `../release_v2/`, and `release/` is never written.
 
 **D-16 · First-stage price = mean header blob base fee over ALL blocks of the day.** Alternatives: the
@@ -173,3 +175,21 @@ use; Ethereum L1 as a control is contaminated. Fee outcome in ETH, so ETH/USD do
 controls' fees move with their own tokens, which adds noise. Results: activity +0.28 (SE 0.11, placebo p =
 0.097); fees −0.37 (SE 0.20, placebo p = 0.35). Reported as suggestive only. A reviewer could reasonably classify Plume and Gravity differently. Dropping them (5 controls): activity
 +0.26 (SE 0.11), fees −0.44 (SE 0.20); insensitive.
+
+**D-26 · Analysis inputs moved to deposit version 2 (`../release_v2/`, same DOI doi:10.7910/DVN/4AOXKT, draft).**
+v2 = v1 + `mempool_inclusion.parquet` (5.38M blob txs matched to their first Xatu sighting, Dencun and Pectra)
++ corrected DATASETS.md, regenerated CODEBOOK/MANIFEST/validation report. The 13 other data files are
+byte-identical to v1. `growthepie_fundamentals.parquet` was rebuilt with identical content but different row
+order (the merge wrote it without ORDER BY), so the v1 bytes were kept; the merge now orders it for future runs.
+All v1 results are therefore unchanged by construction. Deposit: 1 file added, 4 replaced, 14 unchanged; not
+published.
+
+**D-08 result (script 06, full data).** Queueing at the floor is rejected. Transactions first seen at the floor
+wait the fewest blocks (mean 1.03 Dencun / 0.89 Pectra, vs 2.25 / 1.26 when the previous block was full), are
+priced out by 0.08% / 0.07% of the blocks they miss, and almost never wait over an hour (0.009%). Within
+rollup-day, the floor changes P(miss first block) by +1.8 pp (Dencun) / −0.6 pp (Pectra) on bases of 42% / 31%.
+About half of delayed floor txs passed at least one full block: usage bursts reach max even when the excess is 0.
+The rationing that exists at the floor is about one block (~12 s). Congested states show more waiting, and in
+Dencun, being priced out (27% of passed blocks) is where price actually rations. Grace-period definition of
+"first opportunity" (block timestamp > first sighting, no allowance for build latency) inflates miss rates
+uniformly across states; state comparisons are unaffected.

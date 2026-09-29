@@ -119,7 +119,7 @@ dd = tr.set_index("period")
 dw = dwl.set_index("eta_label")
 save_numbers("08_welfare", {
     **{f"eta_{i}": v for i, v in enumerate(ETA.values())},
-    "fees_dencun_eth": tr[tr.regime == "dencun"].fees_eth.sum(), "fees_dencun_usd": tr[tr.regime == "dencun"].fees_usd.sum(),
+    "fees_dencun_eth": tr[tr.regime == "dencun"].fees_eth.sum(), "fees_dencun_usd": tr[tr.regime == "dencun"].fees_usd.sum(), "fees_dencun_usd_m": tr[tr.regime == "dencun"].fees_usd.sum() / 1e6,
     "fees_pectra_eth": dd.loc["pectra", "fees_eth"], "fees_pectra_usd": dd.loc["pectra", "fees_usd"],
     "fees_reserve_eth": tr[tr.regime.isin(["fusaka", "bpo1", "bpo2"])].fees_eth.sum(),
     "fees_reserve_usd": tr[tr.regime.isin(["fusaka", "bpo1", "bpo2"])].fees_usd.sum(),
