@@ -1,8 +1,8 @@
 duckdb
-pandas
-numpy
-pyarrow
-statsmodels
-pyfixest
 matplotlib
+numpy
+pandas
+pyarrow
+pyfixest
+statsmodels
 tabulate

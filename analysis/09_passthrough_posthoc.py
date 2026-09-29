@@ -87,6 +87,10 @@ pc = pd.DataFrame({"dln_fee": np.log(pc[("txcosts_median_eth", True)] / pc[("txc
 pd.DataFrame([{"spec": "main (chain FE + day FE)", **main}, {"spec": "robustness: + chain trends", **trd},
               {"spec": "robustness: controls without plume, gravity", **nopg}]).to_csv(TAB / "t5_passthrough.csv", index=False)
 pc.to_csv(TAB / "t5_passthrough_by_chain.csv", index=False)
+# dose-response within blob users: does activity rise more where fees fell more? (descriptive, unit = chain)
+bt = pc[pc.blob == 1]
+dose = pf.feols("dln_act ~ dln_fee", data=bt, vcov="hetero")
+dose_b, dose_se = dose.coef()["dln_fee"], dose.se()["dln_fee"]
 
 log = ["# 09 — POST HOC: L2 fee pass-through and L2 activity at Pectra", "",
        "Not pre-specified (added after D-24). Unit: chain x day; chain FE + day FE; +-28 days; fork day excluded.",
@@ -97,7 +101,10 @@ log = ["# 09 — POST HOC: L2 fee pass-through and L2 activity at Pectra", "",
        f"- activity-margin contribution to blob demand: b_act / pi = {main['eta_activity_margin']:.3f} log points per mETH/blob (pi = {pi:.3f})",
        f"- robustness, + chain-specific linear trends: b_fee = {trd['b_fee']:.3f} ({trd['se_fee']:.3f}), b_act = {trd['b_act']:.3f} ({trd['se_act']:.3f})",
        f"- robustness, controls without plume and gravity ({nopg['n_control']} controls): b_fee = {nopg['b_fee']:.3f} ({nopg['se_fee']:.3f}), "
-       f"b_act = {nopg['b_act']:.3f} ({nopg['se_act']:.3f})", "",
+       f"b_act = {nopg['b_act']:.3f} ({nopg['se_act']:.3f})",
+       f"- dose-response within blob users (unit: chain, N = {len(bt)}): slope of dln activity on dln fee = {dose_b:.3f} "
+       f"(HC SE {dose_se:.3f}). A slope near zero means the activity gap is a group difference, which an ETH-ecosystem-"
+       "specific shock would also produce (most controls use their own gas tokens).", "",
        "## Per-chain mean changes (descriptive)", "", pc.sort_values("dln_fee").to_markdown(index=False, floatfmt=".3f")]
 (LOG / "09_passthrough_posthoc.md").write_text("\n".join(log) + "\n")
 print("\n".join(log))
@@ -105,7 +112,8 @@ save_numbers("09_passthrough", {**{k: v for k, v in main.items() if k != "chains
                                 "n_placebo": len(pl), "trend_b_fee": trd["b_fee"], "trend_se_fee": trd["se_fee"],
                                 "trend_b_act": trd["b_act"], "trend_se_act": trd["se_act"],
                                 "nopg_b_fee": nopg["b_fee"], "nopg_se_fee": nopg["se_fee"], "nopg_b_act": nopg["b_act"],
-                                "nopg_se_act": nopg["se_act"], "nopg_n_control": nopg["n_control"]})
+                                "nopg_se_act": nopg["se_act"], "nopg_n_control": nopg["n_control"],
+                                "dose_b": dose_b, "dose_se": dose_se, "dose_n": len(bt)})
 
 INK2, S1C, S2C = "#52514e", "#2a78d6", "#eb6834"
 fig, ax = plt.subplots(figsize=(6.0, 4.0))
