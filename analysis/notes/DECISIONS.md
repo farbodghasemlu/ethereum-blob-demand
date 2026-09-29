@@ -126,3 +126,27 @@ welfare object is aggregate blob demand.
 **D-21 · Documentation fixes upstream (DATASETS.md, 08 notes).** Corrected the computed-fee statement (D-02),
 documented the Xatu collector changes (D-15), and recorded that Celenium was unreachable and Celestia columns come
 from growthepie (D-09). These change DATASETS.md's checksum, so they ship in deposit version 2.
+
+**D-22 · The execution-base-fee instrument fails exclusion mechanically, not only via L1 congestion.** Every blob
+rides in a type-3 tx that pays execution gas at the same base fee, so base-fee variation (including variation
+driven by non-rollup events such as NFT mints) raises the cost of posting through two channels: the EIP-7918
+reserve and the carrier tx's own execution gas. Both are proportional to the base fee, so no base-fee
+instrument can isolate the blob-price effect. What it can identify is the response to the full per-post cost,
+and even that requires the base-fee variation to be unrelated to L2 activity. Exploratory estimate (script 07,
+BPO2, rollup × hour, rollup×day and rollup×hour-of-day FE): +0.060 (SE 0.020) log points of blobs per log point
+of base fee. Posting rises in expensive hours: the wrong sign for a cost response, and what one expects if busy
+L1 hours are busy L2 hours. Reported as evidence that intraday base-fee variation is contaminated by demand, not
+as an elasticity.
+
+**D-23 · Welfare uses exponential demand calibrated day by day, with η at bounds rather than the point estimate.**
+The point estimate is ≈0 (wrong sign), which would mechanically give zero deadweight loss. The DWL table therefore
+evaluates η at the elastic 95% CI bound (−0.045), the DA-intensity spec-curve 5th percentile (−0.43), and the
+total-demand median (−0.32) and 5th percentile (−1.36), the last two being confounded upper bounds. The
+counterfactual for the EIP-7918 reserve is zero-price allocation of slack capacity (usage was 32% of target on
+average), with the protocol's own implicit assumption that marginal cost is zero below target. Alternatives: a
+positive marginal cost of blob space (node bandwidth/storage) would shrink the reserve's DWL further, possibly
+to a gain; a linear demand curve would give the same Harberger triangle to first order at these tiny prices.
+Result: DWL ≤ 2.6 ETH (≈$8k) over 296 reserve-regime days even at the most elastic value. The rule's
+first-order welfare effect is distributional: 4,704 ETH ($14.8M) of Dencun fees, 67% of them in 2024-Q4 and
+2025-Q1. An independent scale check (price volatility in congested quarters vs detrended L2-activity
+volatility) implies |η| ≈ 0.07 per mETH/blob, inside the spec-curve range and near the headline CI.
