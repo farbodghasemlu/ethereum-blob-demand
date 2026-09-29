@@ -2,6 +2,8 @@
 
 data/day_panel.parquet         unit: UTC day. Market-level supply, price and demand.
 data/rollup_day_panel.parquet  unit: rollup x UTC day (days with >=1 post only; no zero-filling).
+data/est_panel.parquet         unit: rollup x UTC day, estimation panel: labelled rollups, zero-filled within
+                               each rollup's active span, transition/partial days dropped, growthepie txcount.
 
 Data-handling rules (all flagged, none silently applied to estimation samples):
 - Blob txs past the last header block have no date/regime and are excluded (audit table undated_txs).
@@ -92,6 +94,33 @@ LEFT JOIN gkeys g ON g.origin_key = coalesce(xw.origin_key, r.rollup)
 ORDER BY rollup, date""")
 rpan.write_parquet(str(DATA / "rollup_day_panel.parquet"))
 
+# ---- estimation panel: zero-filled rollup x day (DECISIONS D-04, D-05, D-06, D-11, D-14) ---------------
+# Labelled rollups only; every day from first to last posting date; transition and partial days dropped.
+# Prices converted to milli-ETH per blob: wei/blob-gas * 131072 gas/blob / 1e15 wei/mETH.
+MWEI = f"* {GAS_PER_BLOB} / 1e15"
+est = c.sql(f"""
+WITH span AS (SELECT rollup, any_value(growthepie_key) AS growthepie_key, min(date) AS first_post, max(date) AS last_post
+              FROM rpan WHERE NOT is_unknown GROUP BY 1),
+grid AS (SELECT s.rollup, s.growthepie_key, s.first_post, s.last_post, d.date
+         FROM span s JOIN day d ON d.date BETWEEN s.first_post AND s.last_post
+         WHERE NOT d.transition_day AND NOT d.partial_day),
+tc AS (SELECT origin_key, date, value AS l2_txcount FROM '{GROWTHEPIE}' WHERE metric_key = 'txcount')
+SELECT g.rollup, g.date, g.growthepie_key, g.first_post, g.last_post,
+       coalesce(r.n_blobs, 0) AS n_blobs, coalesce(r.n_txs, 0) AS n_blob_txs, r.n_blobs IS NULL AS zero_filled,
+       r.avg_blobs_per_tx, r.med_interpost_s, coalesce(r.blob_fee_eth, 0) AS blob_fee_eth,
+       tc.l2_txcount,
+       d.regime, d.pricing_regime,
+       d.price_block_mean_wei {MWEI} AS p_mean_meth, d.price_block_median_wei {MWEI} AS p_median_meth,
+       d.price_paid_wei {MWEI} AS p_paid_meth, d.share_blocks_at_floor, d.share_blocks_at_max,
+       d.exec_base_fee_mean_wei / 1e9 AS exec_base_fee_gwei, d.eth_usd
+FROM grid g JOIN day d USING (date)
+LEFT JOIN rpan r ON r.rollup = g.rollup AND r.date = g.date
+LEFT JOIN tc ON tc.origin_key = g.growthepie_key AND tc.date = g.date
+ORDER BY g.rollup, g.date""")
+est.write_parquet(str(DATA / "est_panel.parquet"))
+est_n = c.sql("SELECT count(*) AS rollup_days, sum(zero_filled::INT) AS zero_filled, count(DISTINCT rollup) AS rollups, "
+              "count(l2_txcount) AS with_txcount FROM est").df()
+
 # ---- log -----------------------------------------------------------------------------------------
 rec = c.sql(f"""SELECT count(*) AS rows_joined,
                        count(*) FILTER (WHERE o.n_txs IS DISTINCT FROM r.n_txs OR o.n_blobs IS DISTINCT FROM r.n_blobs) AS rows_differing
@@ -112,6 +141,7 @@ lines = ["# 02 — Panels", "",
          "", "Zero-post days inside each labelled rollup's first..last posting date (NOT in the panel):",
          gaps.to_markdown(index=False),
          "", "growthepie coverage:", cov.to_markdown(index=False),
+         "", "Estimation panel (zero-filled, transition/partial days dropped):", est_n.to_markdown(index=False),
          "", "Days by regime:", dd.groupby("regime", sort=False).size().rename("days").to_frame().to_markdown()]
 (LOG / "02_build_panels.md").write_text("\n".join(lines) + "\n")
 print("\n".join(lines))
