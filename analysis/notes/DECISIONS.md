@@ -111,3 +111,18 @@ reported as well.
 **D-18 · Mempool collection covers every Dencun and Pectra day, not only floor days.** Selecting days by floor
 incidence selects on the outcome, and the mechanism test needs non-floor days for contrast. The range is
 2024-03-13 to 2025-12-03; post-Fusaka is not collected.
+
+**D-19 · Mantle stays in the headline sample although it posted 0 blobs pre-Pectra and 22 post.** It meets the
+PRESPEC sample rule (active span covers the window, txcount present), and the rule is not revised after seeing
+results. Its weight in the pooled PPML is negligible: dropping it moves β from −0.0286 to −0.0287. Its
+per-rollup β is undefined, so it is omitted from the heterogeneity figure (noted there).
+
+**D-20 · Pooled PPML is volume-weighted, and this matters for the sign.** Base (46% of the sample's blobs) has
+β = −0.09 and pulls the pooled β negative, while 9 of 14 rollups with a defined per-rollup β have β > 0. An
+equal-weighted mean of per-rollup βs is +0.022. Neither weighting changes the substantive conclusion (no
+material response), but the headline sign should not be read as meaningful. PPML weighting is kept because the
+welfare object is aggregate blob demand.
+
+**D-21 · Documentation fixes upstream (DATASETS.md, 08 notes).** Corrected the computed-fee statement (D-02),
+documented the Xatu collector changes (D-15), and recorded that Celenium was unreachable and Celestia columns come
+from growthepie (D-09). These change DATASETS.md's checksum, so they ship in deposit version 2.
