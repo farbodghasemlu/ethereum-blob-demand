@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use this code or the dataset it builds, please cite them as below."
+title: "Ethereum blob demand: data pipeline and replication package"
+type: software
+authors:
+  - family-names: Ghasemlu
+    given-names: Farbod
+    affiliation: Independent Researcher
+    orcid: "https://orcid.org/0009-0009-2303-5672"
+version: 1.0.0
+date-released: 2026-09-30
+license: MIT
+repository-code: "https://github.com/farbodghasemlu/ethereum-blob-demand"
+keywords:
+  - ethereum
+  - eip-4844
+  - rollups
+  - data availability
+  - transaction fees
+identifiers:
+  - type: doi
+    value: 10.7910/DVN/4AOXKT
+    description: "Dataset built by this pipeline (Harvard Dataverse)"
+references:
+  - type: data
+    title: "Ethereum Blob (EIP-4844) Data-Availability Market: Block, Transaction, and Rollup Panels"
+    authors:
+      - family-names: Ghasemlu
+        given-names: Farbod
+        orcid: "https://orcid.org/0009-0009-2303-5672"
+    doi: 10.7910/DVN/4AOXKT
+    publisher:
+      name: Harvard Dataverse
+    year: 2026
+    license: CC-BY-4.0

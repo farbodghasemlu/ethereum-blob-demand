@@ -1,0 +1,35 @@
+# data: the deposit lives at doi:10.7910/DVN/4AOXKT
+data/
+datasets/
+release/
+release_v*/
+archive/
+reports/
+work/
+state/
+logs/
+*.log
+*.duckdb
+*.parquet
+
+# local configuration and secrets
+.env
+deposit.config.json
+forks.json
+rollups.json
+
+# dependencies and tooling
+node_modules/
+.venv/
+__pycache__/
+analysis/tools/
+
+# regenerable analysis outputs (the paper's inputs are tracked in analysis/paper/inputs/)
+analysis/data/
+analysis/output/
+analysis/paper/draft.md
+analysis/paper/arxiv/
+analysis/paper/arxiv_submission.tar.gz
+
+# local backups
+backup_*/
