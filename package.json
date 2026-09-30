@@ -1,0 +1,27 @@
+{
+  "name": "blob-da-market-pipeline",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=18.17"
+  },
+  "scripts": {
+    "headers": "node 01_collect_el_headers.js",
+    "blobtxs": "node 02_collect_blob_txs.js",
+    "blobstats": "node 03_collect_blobscan_stats.js",
+    "celestia": "node 04_collect_celestia.js",
+    "prices": "node 05_collect_prices.js",
+    "growthepie": "node 06_collect_growthepie.js",
+    "mempool": "node 07_collect_xatu_mempool.js",
+    "merge": "node 08_validate_merge.js",
+    "all": "npm run headers && npm run blobtxs && npm run blobstats && npm run celestia && npm run prices && npm run growthepie && npm run merge",
+    "package": "node 09_package_release.js",
+    "deposit": "node 10_deposit_dataverse.js",
+    "labels": "node 11_fetch_rollup_labels.js",
+    "rest": "npm run blobtxs && npm run blobstats && npm run celestia && npm run prices && npm run growthepie && npm run merge"
+  },
+  "dependencies": {
+    "duckdb": "^1.1.3"
+  }
+}
