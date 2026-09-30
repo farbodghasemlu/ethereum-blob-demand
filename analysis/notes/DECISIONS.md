@@ -234,3 +234,17 @@ are left unscored. The reserve governs the update in 29.5% (Fusaka), 76.9% (BPO1
 reproducing the project notes. Correction: the notes said Fusaka's boundary rests only on the floor disappearing.
 The update rule separates the regimes: the EIP-4844 rule mispredicts 29.5% of Fusaka blocks and the EIP-7918 rule
 would mispredict 37.6% of Dencun and 46.1% of Pectra blocks. The boundary is as firmly identified as the others.
+
+**D-31 · One replication directory: `../release/` = deposit version 2.** v1 was archived to
+`../archive/release_v1_2026-09-29.tar.gz`, verified member by member against v1's manifest, and removed;
+`release_v2/` was moved into `release/` and set read-only. The 19 files listed in its manifest match the SHA-256
+recorded by the deposit script when each was uploaded to, or confirmed against, the Dataverse draft (the server's
+MD5 fixity check). Two files in the directory are deposit tooling and are not uploaded by design:
+`manifest.json` (machine-readable manifest used by the deposit script) and `dataverse_dataset.json` (citation
+metadata payload). A live re-check against the draft was not possible at that point (no API token in the
+environment). Upstream script 09 now refuses to overwrite a non-empty output directory.
+
+**D-32 · Celenium dropped from the plan.** Celenium blocks the collection host and no alternative network is
+available. Rollup-level migration between DA layers is therefore unobservable here; the paper says so in its
+limitations, names Celenium as the source that would provide it, and uses only growthepie's aggregate
+cross-layer series.

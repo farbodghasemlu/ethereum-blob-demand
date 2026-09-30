@@ -1,7 +1,7 @@
 # Analysis — run order
 
 Setup: `uv venv .venv && uv pip install --python .venv/bin/python -r requirements.lock`
-Run everything: `./run_all.sh`. Inputs are read from the deposit directory set in `common.py` (read-only).
+Run everything: `./run_all.sh`. Inputs are read from `../release/` (deposit version 2, read-only), set in `common.py`.
 
 | script | produces |
 |---|---|

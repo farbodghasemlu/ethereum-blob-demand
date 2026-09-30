@@ -3,7 +3,7 @@ from pathlib import Path
 import duckdb
 
 ROOT = Path(__file__).resolve().parent
-REL = (ROOT / ".." / "release_v2").resolve()   # READ-ONLY archival deposit, version 2 (DECISIONS D-26); v1 = ../release
+REL = (ROOT / ".." / "release").resolve()   # READ-ONLY archival deposit, version 2 (DECISIONS D-26, D-31)
 OUT = ROOT / "output"
 TAB, FIG, LOG = OUT / "tables", OUT / "figures", OUT / "logs"
 DATA = ROOT / "data"                          # derived datasets built by scripts here
