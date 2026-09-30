@@ -290,3 +290,14 @@ series matches the deposited one on 1,088 of 1,089 overlapping days; the excepti
 close (2,760.63) was a partial day captured mid-day and whose regenerated close is 2,684.71. Regeneration also
 fills 24-28 September 2026. Effect on the paper: only USD figures from the reserve regime move (BPO2 fees
 $33,555 to $35,754; the largest deadweight-loss bound $8,032 to $8,039); no ETH figure and no estimate changes.
+
+**D-37 · Deposit metadata corrected before publication; licence changed to CC BY 4.0.** The Dataverse draft's
+metadata had been set from `deposit.config.json` at creation and still carried template placeholders: depositor
+"Lastname, Firstname" and a source-code link "https://github.com/USER/REPO". It also credited Celenium, whose data
+the deposit does not contain (D-09), omitted Blobscan and blob-list, and left the end of the time period blank. We
+set the depositor, link the replication repository, credit Blobscan, blob-list (CC0 1.0), growthepie (CC BY 4.0)
+and Xatu / ethPandaOps (CC BY 4.0), and set the period to 2024-03-13 to 2026-09-28. The dataset licence was CC0
+1.0, which cannot be applied to redistributed CC BY 4.0 material (growthepie series, Xatu-derived mempool
+records). We license the deposit CC BY 4.0. Alternative: keep CC0 and remove the CC BY inputs. Rejected because
+the mempool and growthepie files support Sections 8 and 11 and Table 1. The paper's author line and the citation
+metadata carry the author's ORCID (0009-0009-2303-5672).

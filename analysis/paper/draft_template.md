@@ -1,6 +1,6 @@
 ---
 title: "Demand Under a Mechanical Price: Elasticity and Welfare in Ethereum's Data-Availability Market"
-author: "Farbod Ghasemlu (Independent Researcher)"
+author: "Farbod Ghasemlu, Independent Researcher, ORCID [0009-0009-2303-5672](https://orcid.org/0009-0009-2303-5672)"
 date: "September 2026"
 bibliography: references.bib
 ---
@@ -138,8 +138,8 @@ identified exactly by the update rule (Appendix A).
 # 4. Data
 
 The data combine five sources. Block headers from Dencun activation onward, collected over public JSON-RPC,
-supply the fee state and blob usage of every block. Every blob-carrying transaction, with its rollup label, comes
-from the Blobscan index [@blobscan]. Daily L2 activity, including transaction counts and median transaction fees,
+supply the fee state and blob usage of every block. Every blob-carrying transaction comes from the Blobscan index
+[@blobscan]; rollup labels come from Blobscan and the blob-list registry [@bloblist], released under CC0. Daily L2 activity, including transaction counts and median transaction fees,
 comes from growthepie [@growthepie], published under CC BY 4.0. First mempool sightings of blob transactions for
 the Dencun and Pectra regimes come from the Xatu sensor network of ethPandaOps [@xatu], also CC BY 4.0. ETH/USD
 closes come from Binance, with Coinbase as fallback. The deposited dataset is described in Section 13.
@@ -452,7 +452,7 @@ pre-specified test on the next supply shock that arrives in a congested market w
 
 The data are deposited at Harvard Dataverse, doi:10.7910/DVN/4AOXKT (version 2), under embargo pending
 publication [@dataverse]. The replication package regenerates every number, table and figure from the deposit with
-one command. Blob transaction data are indexed by Blobscan [@blobscan]. L2 fundamentals are from growthepie
+one command. Blob transaction data are indexed by Blobscan [@blobscan], with batcher labels from blob-list (CC0) [@bloblist]. L2 fundamentals are from growthepie
 (CC BY 4.0) [@growthepie]. Mempool observations are from Xatu / ethPandaOps (CC BY 4.0) [@xatu]. The specification
 fixed before estimation (commit `65ae268`), the decision log and the specification curve are in the replication
 repository.

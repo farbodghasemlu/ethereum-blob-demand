@@ -1,4 +1,4 @@
-"""Shared paths and constants. Fork table is the established regime table in the project notes."""
+"""Shared paths and constants. The fork table is verified block by block in script 01 (DECISIONS D-30)."""
 from pathlib import Path
 import duckdb
 

@@ -1,4 +1,4 @@
-"""01 — Data audit. Checks the deposit against the facts the project notes relies on and records
+"""01 — Data audit. Checks the deposit against the facts the analysis relies on and records
 every data problem that a later script has to handle.
 
 Outputs (output/tables/audit_*.csv, output/logs/01_data_audit.md). Aggregates only; nothing
@@ -16,17 +16,17 @@ def save(df, name, title, note=""):
     print(f"\n== {title}\n{df.to_string(index=False)}")
 
 
-# 1. Regime block counts vs the the project notes table.
+# 1. Regime block counts vs the regime table in our working notes (DECISIONS D-01).
 claimed = {"dencun": 3_004_497, "pectra": 1_504_610, "fusaka": 40_084, "bpo1": 203_605, "bpo2": 1_897_647}
 df = c.sql(f"""SELECT regime, count(*) AS blocks, min(timestamp) AS first_ts, max(timestamp) AS last_ts,
                       avg(at_floor::INT) AS share_blocks_at_floor, avg(at_max::INT) AS share_blocks_at_max
                FROM '{BLOCKS}' GROUP BY 1 ORDER BY first_ts""").df()
-df["blocks_claimed_in_notes"] = df.regime.map(claimed)
-df["diff"] = df.blocks - df.blocks_claimed_in_notes
+df["blocks_in_notes"] = df.regime.map(claimed)
+df["diff"] = df.blocks - df.blocks_in_notes
 act = {f[0]: f[1] for f in FORKS}
 df["first_ts_ge_activation"] = df.apply(lambda r: r.first_ts >= act[r.regime], axis=1)
-save(df, "regime_blocks", "Blocks per regime vs the project notes",
-     "Unit: execution block. `diff` = deposit minus the the project notes table.")
+save(df, "regime_blocks", "Blocks per regime vs our working notes",
+     "Unit: execution block. `diff` = deposit minus the working-notes table.")
 
 # 2. Blob txs whose block is not in the header panel (no timestamp/date/regime).
 df = c.sql(f"""SELECT count(*) AS n_txs, sum(blob_count) AS n_blobs, count(DISTINCT block_number) AS n_blocks,
@@ -59,7 +59,7 @@ df = c.sql(f"""SELECT coalesce(regime, '(undated)') AS regime, count(*) AS n_txs
                FROM '{BLOB_TXS}' GROUP BY GROUPING SETS ((regime), ()) ORDER BY min(block_ts) NULLS LAST""").df()
 df.loc[df.n_txs == df.n_txs.max(), "regime"] = "ALL"
 save(df, "unknown_share", "Unattributed blob demand (rollup = 'unknown')",
-     "The validation report's 10.3% is the tx share; the ~4% in the project notes is the blob share. "
+     "The validation report's 10.3% is the tx share; the ~4% in our working notes is the blob share. "
      "The share is not stable across regimes.")
 
 # 5. Price fields: computed (header excess) vs observed (Blobscan), by regime.
