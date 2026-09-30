@@ -1,5 +1,8 @@
-"""04 — Headline estimate (PRESPEC.md): Pectra supply shock, DA-intensity semi-elasticity.
-Also: placebo-date permutation inference (primary), S1 total demand, S2 Fusaka, S5 log-price version.
+"""04 — Main estimates: Pectra supply shock.
+Column 1: DA-intensity semi-elasticity (PRESPEC headline). Columns 2-3: unnormalized blob purchases (PRESPEC S1, promoted
+to co-primary; DECISIONS D-28), on the headline's 15 rollups and on all labelled rollups.
+Inference: placebo-date permutation and placebo-quantile (Conley-Taber) intervals (primary, PRESPEC 4), wild cluster
+restricted score bootstrap (D-29), CRV1 and two-way SEs. Minimum detectable effect (D-27). Also S2 Fusaka, S5 log price.
 
 Outputs: output/tables/t2_headline.{csv,md}, output/tables/placebo_pectra.csv,
          output/figures/fig2_placebo.{pdf,png}, output/logs/04_headline_pectra.md
@@ -64,17 +67,23 @@ log.extend(["## Placebo-date permutation (primary inference)", "",
             f"- placebo pi (mETH/blob): mean {pl.pi.mean():.4f}, sd {pl.pi.std():.4f}", ""])
 print("\n".join(log[-7:]))
 
-# ---- S1 total demand (confounded by ETH rally; upper bound on magnitude) --------------------------------
-S1 = event_estimate(panel, day, T_PECTRA, w=W, activity="none_all")
-show("S1 total demand: no activity offset, all labelled rollups active across window", S1, "rollup x day")
-pl1 = []
+# ---- Co-primary: unnormalized blob purchases (D-28) ------------------------------------------------------
+L15 = event_estimate(panel, day, T_PECTRA, w=W, activity="none")          # same 15 rollups, no L2-activity term
+show("Levels, headline sample: PPML blobs, no normalization, rollup FE + trends + DOW", L15, "rollup x day")
+S1 = event_estimate(panel, day, T_PECTRA, w=W, activity="none_all")       # all labelled rollups active in window
+show("Levels, all labelled rollups (PRESPEC S1)", S1, "rollup x day")
+pl15, pl1 = [], []
 for tau in days:
-    r = event_estimate(panel, day, tau, w=W, activity="none_all", twoway=False)
-    pl1.append(r["beta"])
-pl1 = np.array(pl1)
+    try:
+        pl15.append(event_estimate(panel, day, tau, w=W, activity="none", twoway=False)["beta"])
+    except Exception:
+        pass
+    pl1.append(event_estimate(panel, day, tau, w=W, activity="none_all", twoway=False)["beta"])
+pl15, pl1 = np.array(pl15), np.array(pl1)
+p_beta_l15 = (np.abs(pl15) >= abs(L15["beta"])).mean()
 p_beta_s1 = (np.abs(pl1) >= abs(S1["beta"])).mean()
-log.extend([f"S1 placebo-date permutation ({len(pl1)} dates, same rule): two-sided p = {p_beta_s1:.3f}; "
-            f"placebo beta sd {pl1.std():.4f}.", ""])
+log.extend([f"Placebo permutation, levels 15-rollup sample ({len(pl15)} dates): p = {p_beta_l15:.3f}; sd {pl15.std():.4f}.",
+            f"Placebo permutation, levels all rollups ({len(pl1)} dates): p = {p_beta_s1:.3f}; sd {pl1.std():.4f}.", ""])
 # S1b: 'unknown' added as one extra unit (DECISIONS D-06)
 c = con()
 unk = c.sql(f"SELECT date, n_blobs FROM '{DATA / 'rollup_day_panel.parquet'}' WHERE is_unknown").df()
@@ -109,19 +118,80 @@ log.extend(["## S5 log-price elasticity and the floor level", "",
             "Same beta; the log-price change is recomputed as if the floor were F wei. A constant-elasticity estimate "
             "identified off a move to the floor is set by F (DECISIONS D-10, D-11).", "", S5.to_markdown(index=False, floatfmt=".4g"), ""])
 
-# ---- tables & figure -----------------------------------------------------------------------------------
-tab = pd.DataFrame([{"spec": "Headline (PRESPEC)", **H}, {"spec": "S1 total demand", **S1}] +
+# ---- Intervals: placebo-quantile (Conley-Taber), wild score bootstrap, CRV1 (D-27, D-29) ---------------------
+from est import wild_ci
+def ct_interval(beta, placebo):
+    """Invert the placebo distribution of estimation error: beta - q97.5 .. beta - q2.5 (Conley and Taber 2011)."""
+    q_lo, q_hi = np.quantile(placebo, [0.025, 0.975])
+    return beta - q_hi, beta - q_lo
+cols3 = {"(1) DA intensity [headline]": (H, pl.beta.to_numpy(), dict(offset=True), True),
+         "(2) Levels, same 15 rollups": (L15, pl15, dict(offset=False), True),
+         "(3) Levels, all labelled rollups": (S1, pl1, dict(offset=False), False)}
+rows_t = []
+for name, (r, plc, kw, txreq) in cols3.items():
+    dd = window_sample(panel, T_PECTRA, W, require_txcount=txreq)
+    w_lo, w_hi, _, _ = wild_ci(dd, r["beta"], trend="linear", dow=True, half_width=0.35, step=0.0025, **kw)
+    c_lo, c_hi = ct_interval(r["beta"], plc)
+    perm_p = (np.abs(plc) >= abs(r["beta"])).mean()
+    dlp = np.log(np.maximum(wei, 1))[s.date > T_PECTRA].mean() - np.log(np.maximum(wei, 1))[s.date < T_PECTRA].mean()
+    rows_t.append(dict(spec=name, beta=r["beta"], se_crv1=r["se_beta_rollup"], se_twoway=r["se_beta_twoway"],
+                       ci_crv1_lo=r["beta"] - 1.96 * r["se_beta_rollup"], ci_crv1_hi=r["beta"] + 1.96 * r["se_beta_rollup"],
+                       ci_wild_lo=w_lo, ci_wild_hi=w_hi, ci_placebo_lo=c_lo, ci_placebo_hi=c_hi, perm_p=perm_p,
+                       n_placebo=len(plc), pi=r["pi"], se_pi=r["se_pi"], eta=r["eta"],
+                       eta_placebo_lo=c_hi / r["pi"], eta_placebo_hi=c_lo / r["pi"],
+                       eps_pre=r["eps_at_pre_mean"], eps_placebo_lo=c_hi / r["pi"] * r["p_pre"],
+                       eps_placebo_hi=c_lo / r["pi"] * r["p_pre"], log_price_elasticity=r["beta"] / dlp,
+                       n_obs=r["n_obs"], n_rollups=r["n_rollups"], n_days=r["n_days"], p_pre=r["p_pre"], p_post=r["p_post"]))
+T2 = pd.DataFrame(rows_t)
+T2["mde_pct_placebo"] = 100 * (np.exp(T2.ci_placebo_hi) - 1)     # largest increase in blobs not ruled out
+T2["mde_pct_wild"] = 100 * (np.exp(T2.ci_wild_hi) - 1)
+T2["mde_pct_crv1"] = 100 * (np.exp(T2.ci_crv1_hi) - 1)
+T2.to_csv(TAB / "t2_main.csv", index=False)
+fmt = lambda a, b: f"[{a:.3f}, {b:.3f}]"
+view = pd.DataFrame({
+    "beta (Post, log points)": T2.beta.map("{:.3f}".format).to_numpy(),
+    "SE, CRV1 by rollup": T2.se_crv1.map("{:.3f}".format).to_numpy(),
+    "SE, two-way rollup and day": T2.se_twoway.map("{:.3f}".format).to_numpy(),
+    "95% CI, placebo quantiles [reported]": [fmt(a, b) for a, b in zip(T2.ci_placebo_lo, T2.ci_placebo_hi)],
+    "95% CI, wild cluster score bootstrap": [fmt(a, b) for a, b in zip(T2.ci_wild_lo, T2.ci_wild_hi)],
+    "95% CI, CRV1": [fmt(a, b) for a, b in zip(T2.ci_crv1_lo, T2.ci_crv1_hi)],
+    "placebo permutation p": T2.perm_p.map("{:.3f}".format).to_numpy(),
+    "first stage pi (mETH/blob)": T2.pi.map("{:.3f}".format).to_numpy(),
+    "eta = beta/pi (per mETH/blob)": T2.eta.map("{:.3f}".format).to_numpy(),
+    "elasticity at pre-shock price": T2.eps_pre.map("{:.3f}".format).to_numpy(),
+    "largest increase not ruled out (placebo CI)": T2.mde_pct_placebo.map("{:.1f}%".format).to_numpy(),
+    "log-price elasticity (floor-dependent, D-10)": T2.log_price_elasticity.map("{:.4f}".format).to_numpy(),
+    "N (rollup-days)": T2.n_obs.map("{:,}".format).to_numpy(), "rollups": T2.n_rollups.to_numpy(), "days": T2.n_days.to_numpy()},
+    index=T2.spec).T
+(TAB / "t2_main.md").write_text(
+    "Table 2. Pectra supply shock, 2025-04-09 to 2025-06-04 (fork day excluded). Unit: rollup x day. PPML with rollup FE, "
+    "rollup-specific linear trends, day-of-week FE. Column 1 adds ln(L2 transactions) as an offset (blobs per L2 "
+    "transaction). Reported interval: placebo quantiles (Conley and Taber 2011) from the same estimator at every placebo "
+    "break date in the EIP-4844 regime. Wild bootstrap: restricted score bootstrap (Kline and Santos 2012), Rademacher "
+    "weights, clusters = rollups (all 2^15 sign vectors in columns 1-2; 99,999 draws in column 3). Price in mETH per blob "
+    "(1 blob = 131,072 blob gas).\n\n" + view.to_markdown() + "\n")
+log.extend(["## Main table", "", view.to_markdown(), ""])
+
+# effective identifying variation (D-27): the first stage comes only from the congested pre-window
+pre_days = s[s.date < T_PECTRA]
+all4844 = day[day.regime.isin(["dencun", "pectra"])]
+feesd = c.sql(f"SELECT date, blob_fee_eth FROM '{DATA / 'day_panel.parquet'}'").df()
+feesd["date"] = pd.to_datetime(feesd.date)
+a = all4844.merge(feesd, on="date")
+above = a.p_mean_meth > pre_days.p_mean_meth.max()
+EV = dict(pre_p_min=pre_days.p_mean_meth.min(), pre_p_max=pre_days.p_mean_meth.max(), pre_p_mean=pre_days.p_mean_meth.mean(),
+          share_days_above=above.mean(), share_fees_above=a[above].blob_fee_eth.sum() / a.blob_fee_eth.sum(),
+          n_days_above=int(above.sum()), sd_p_congested=a[(a.date >= "2024-10-01") & (a.date < "2025-05-07")].p_mean_meth.std(),
+          sd_p_rest=a[(a.date < "2024-10-01") | (a.date >= "2025-05-07")].p_mean_meth.std())
+log.extend(["## Range of identifying variation (D-27)", "",
+            f"Pre-window daily mean price {EV['pre_p_min']:.3f}..{EV['pre_p_max']:.3f} mETH/blob (mean {EV['pre_p_mean']:.3f}); "
+            f"post-window ~0. EIP-4844 days with a higher daily price than any pre-window day: {EV['n_days_above']} "
+            f"({EV['share_days_above']:.1%} of days, {EV['share_fees_above']:.1%} of fees). SD of daily price: "
+            f"{EV['sd_p_congested']:.3f} (2024-10-01..2025-05-06) vs {EV['sd_p_rest']:.4f} (rest of EIP-4844 regime).", ""])
+
+tab = pd.DataFrame([{"spec": "Headline (PRESPEC)", **H}, {"spec": "Levels 15 rollups", **L15}, {"spec": "S1 levels all", **S1}] +
                    ([{"spec": "S2 Fusaka +-5d", **S2}] if S2 else []))
-tab["perm_p_beta"] = [p_beta] + [np.nan] * (len(tab) - 1)
-tab["usd_per_meth_pre"] = tab.ethusd_pre / 1000
 tab.to_csv(TAB / "t2_headline.csv", index=False)
-cols = ["spec", "beta", "se_beta_rollup", "se_beta_twoway", "perm_p_beta", "pi", "se_pi", "eta", "se_eta",
-        "eps_at_pre_mean", "p_pre", "p_post", "n_obs", "n_rollups", "n_days"]
-(TAB / "t2_headline.md").write_text(
-    "Table 2 — Pectra supply shock. beta: PPML coefficient on Post (log points), rollup FE, rollup linear trends, "
-    "DOW FE. pi: first-stage change in mean blob base fee (mETH per blob; 1 blob = 131,072 blob gas). eta = beta/pi "
-    "(log points per mETH/blob). Unit: rollup x day. perm_p: placebo-date permutation p-value.\n\n"
-    + tab[cols].to_markdown(index=False, floatfmt=".4g") + "\n")
 (LOG / "04_headline_pectra.md").write_text("\n".join(log) + "\n")
 
 INK2, S1C = "#52514e", "#2a78d6"
@@ -142,14 +212,17 @@ for ext in ("pdf", "png"):
 print("done")
 
 from common import save_numbers
+t2 = T2.set_index(pd.Index(["head", "l15", "lall"]))
 save_numbers("04_headline", {
     **{f"head_{k}": v for k, v in H.items() if k != "rollups"},
-    "head_ci_eta_lo": H["eta"] - 1.96 * H["se_eta"], "head_ci_eta_hi": H["eta"] + 1.96 * H["se_eta"],
-    "head_ci_eps_lo": (H["eta"] - 1.96 * H["se_eta"]) * H["p_pre"], "head_ci_eps_hi": (H["eta"] + 1.96 * H["se_eta"]) * H["p_pre"],
+    **{f"l15_{k}": v for k, v in L15.items() if k != "rollups"},
+    **{f"s1_{k}": v for k, v in S1.items() if k != "rollups"},
+    **{f"{i}_{k}": t2.loc[i, k] for i in t2.index for k in t2.columns if k != "spec"},
     "head_usd_pre": H["p_pre"] * H["ethusd_pre"] / 1000,
     "perm_p_beta": p_beta, "perm_p_eta": p_eta, "n_placebo": len(pl), "placebo_sd_beta": pl.beta.std(),
     "placebo_lo": str(pl.tau.min()), "placebo_hi": str(pl.tau.max()),
-    **{f"s1_{k}": v for k, v in S1.items() if k != "rollups"}, "s1_perm_p": p_beta_s1, "s1b_beta": S1b["beta"], "unk_share_window": unk_share,
+    "s1_perm_p": p_beta_s1, "l15_perm_p": p_beta_l15, "s1b_beta": S1b["beta"], "unk_share_window": unk_share,
     **({f"s2_{k}": v for k, v in S2.items() if k != "rollups"} if S2 else {}),
     **{f"s5_elast_floor_{int(r.hypothetical_floor_wei)}": r.log_price_elasticity for r in S5.itertuples()},
+    **{f"ev_{k}": v for k, v in EV.items()},
 })

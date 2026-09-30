@@ -193,3 +193,34 @@ The rationing that exists at the floor is about one block (~12 s). Congested sta
 Dencun, being priced out (27% of passed blocks) is where price actually rations. Grace-period definition of
 "first opportunity" (block timestamp > first sighting, no allowance for build latency) inflates miss rates
 uniformly across states; state comparisons are unaffected.
+
+**D-27 · Magnitude bound (minimum detectable effect) and which interval is reported.** The reported interval
+is the placebo-quantile interval (Conley and Taber 2011): β̂ minus the 97.5th and 2.5th percentiles of β at 516
+placebo break dates, same estimator. It is the only one of the three procedures that reflects common shocks on the
+break date, which is the dominant risk with one event, and PRESPEC §4 named placebo inference as primary. It is
+also the widest for the headline. Headline: [−0.222, 0.110] log points, so the Pectra price cut (0.90 mETH/blob,
+≈$1.40 to zero) rules out increases in blobs per L2 transaction larger than 11.6%. That bounds the elasticity at the
+pre-shock price at about −0.10. The price cut was 100% of the price, so the data do not lack variation; the bound is
+tight because the response was small. The bound holds for prices in the identified range [0, 4.45] mETH/blob
+(pre-window daily range), which covers 98.6% of EIP-4844 days but only 72.8% of blob fees: 27% of fees were paid
+on 9 spike days above that range, where the bound does not apply.
+
+**D-28 · Unnormalized levels promoted to co-primary (2026-09-30).** This is not a PRESPEC revision:
+the levels specification was pre-listed as S1 and was estimated as specified. Columns: (2) the headline's 15
+rollups, so that columns 1 and 2 differ only by the L2-activity offset; (3) all 49 labelled rollups (S1 as
+pre-listed). Same FE and trends as the headline. We considered log price. A log-price coefficient
+identified off a move to the 1-wei floor depends on the floor level (D-10; S5), so the table keeps price in
+mETH/blob and reports the log-price elasticity in a separate, flagged row (−0.010, 1-wei floor). Result: +0.211
+(placebo CI [0.080, 0.337]; wild bootstrap [−0.084, 0.416]). Significance of the levels response depends on the
+inference procedure, and that disagreement is reported. Either way the implied elasticity at the pre-shock price
+is at most 0.31 in magnitude (placebo bound). Levels mix any price response with the ETH rally (D-14); the bound
+is therefore an upper bound on the total price response.
+
+**D-29 · Wild cluster bootstrap for PPML with 15 clusters.** The standard wild cluster bootstrap-t is for OLS;
+for PPML we use the restricted wild score bootstrap (Kline and Santos 2012; the ML analogue in boottest).
+Rademacher weights with all 2^15 = 32,768 sign vectors enumerated (99,999 random draws for 49 clusters); CI by
+test inversion on a 0.0025 grid. A simulation with 15 equal clusters and common day shocks gave 7.3% size at 5%
+and 99% power against a 0.4 alternative. Base supplies 94.6% of the headline's score variance, so the effective
+number of clusters is close to one. This is why CRV1 SEs are too small and why the placebo interval is reported.
+Alternatives: pairs cluster bootstrap (unreliable with few, unequal clusters); Webb six-point weights (not needed
+with full enumeration at G = 15).

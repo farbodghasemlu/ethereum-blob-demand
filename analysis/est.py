@@ -75,6 +75,56 @@ def reduced_form(d, trend="linear", activity="offset", estimator="ppml", dow=Tru
     return out
 
 
+def _rhs_controls(trend, dow):
+    rhs = []
+    if trend in ("linear", "quadratic"):
+        rhs.append("C(rollup):t")
+    if trend == "quadratic":
+        rhs.append("C(rollup):t2")
+    if dow:
+        rhs.append("C(dow)")
+    return rhs
+
+
+def wild_score_test(d, beta0, trend="linear", offset=True, dow=True, draws=None, seed=0):
+    """Wild cluster restricted score bootstrap for the PPML coefficient on `post` (Kline and Santos 2012), clusters =
+    rollups. Imposes beta = beta0, forms the efficient score for beta from the partialled-out regressor, and compares
+    its studentised value with the Rademacher-perturbed distribution. With G <= 16 clusters all 2^G sign vectors are
+    enumerated; otherwise `draws` random vectors. Returns the two-sided bootstrap p-value."""
+    d = d.copy()
+    d["off0"] = beta0 * d.post + (d.lT if offset else 0.0)
+    ctrl = _rhs_controls(trend, dow)
+    fml = f"n_blobs ~ {' + '.join(ctrl) if ctrl else '1'} | rollup"
+    mr = pf.fepois(fml, data=d, offset="off0", vcov="iid")
+    mu = np.asarray(mr.predict(type="response"), dtype=float)
+    d["wt"] = mu
+    # partial out the restricted model's regressors from `post` with Poisson weights mu
+    xr = pf.feols(f"post ~ {' + '.join(ctrl) if ctrl else '1'} | rollup", data=d, weights="wt")
+    xt = np.asarray(xr.resid(), dtype=float)
+    s_i = xt * (d.n_blobs.to_numpy(dtype=float) - mu)
+    S = pd.Series(s_i).groupby(d.rollup.to_numpy()).sum().to_numpy()
+    G = len(S)
+    t_obs = S.sum() / np.sqrt((S ** 2).sum())
+    if G <= 16:
+        W = 1 - 2 * ((np.arange(2 ** G)[:, None] >> np.arange(G)) & 1)
+    else:
+        W = np.random.default_rng(seed).choice([-1, 1], size=(draws or 99_999, G))
+    t_star = (W @ S) / np.sqrt((S ** 2).sum())
+    return float((np.abs(t_star) >= abs(t_obs) - 1e-12).mean())
+
+
+def wild_ci(d, beta_hat, trend="linear", offset=True, dow=True, half_width=0.5, step=0.0025, level=0.95):
+    """Bootstrap confidence set by test inversion over a grid around beta_hat: all beta0 with p >= 1 - level."""
+    grid = np.arange(beta_hat - half_width, beta_hat + half_width + step / 2, step)
+    p = np.array([wild_score_test(d, b, trend, offset, dow) for b in grid])
+    keep = grid[p >= 1 - level]
+    if keep.size == 0:
+        return np.nan, np.nan, grid, p
+    if keep.min() <= grid.min() + step or keep.max() >= grid.max() - step:
+        raise RuntimeError("confidence set reaches the grid edge; widen half_width")
+    return float(keep.min()), float(keep.max()), grid, p
+
+
 def first_stage(day, t0, w, price="mean", trend="linear", dow=True):
     """PRESPEC §2 first stage: day-level OLS of price (mETH/blob) on Post, trend, DOW; Newey-West (7 lags)."""
     lo, hi = t0 - pd.Timedelta(days=w), t0 + pd.Timedelta(days=w)
