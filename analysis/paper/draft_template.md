@@ -1,281 +1,444 @@
-# Demand Under a Mechanical Price: Identification, Elasticity, and Welfare in Ethereum's Data-Availability (Blob) Market
+---
+title: "Demand Under a Mechanical Price: Elasticity and Welfare in Ethereum's Data-Availability Market"
+author: "Farbod Ghasemlu (Independent Researcher)"
+date: "September 2026"
+bibliography: references.bib
+---
 
-*Working draft. Every number is filled in from `output/numbers/*.json` by `10_render_paper.py`; do not edit numbers by hand.*
+# Abstract
 
-## Abstract
+Ethereum sells data-availability capacity to rollups through "blobs" priced by a controller: the blob fee rises
+and falls exponentially with cumulative usage above or below a target, and no auction sets it. We measure what
+this mechanical price costs. The Pectra upgrade of 7 May 2025 doubled blob capacity on a date fixed weeks in
+advance, while the market was congested, and the blob fee fell from {h[head_p_pre]:.2f} mETH per blob (about
+${h[head_usd_pre]:.2f}) to its 1-wei floor. Blobs purchased per L2 transaction changed by {x[head_pct]:.1f}%. The
+95% interval, built from the same estimator at {h[n_placebo]} placebo dates, runs from {x[head_lo_pct]:.1f}% to
+{x[head_hi_pct]:+.1f}%, so we can rule out increases larger than {h[head_mde_pct_placebo]:.1f}% in response to
+removing the entire price. That bounds the elasticity at the pre-shock price at {h[head_eps_placebo_lo]:.2f}.
+Unnormalized blob purchases rose {x[l15_pct]:.0f}%, which bounds the total response, including any rise in L2
+activity, at an elasticity of {h[l15_eps_placebo_lo]:.2f}. With demand this inelastic, the controller works mainly
+as a transfer. Rollups paid ${w[fees_dencun_usd_m]:.1f} million in blob fees under the first blob regime,
+{w[fees_cong_share_dencun]:.0%} of it in two quarters when capacity was full and any market-clearing mechanism would
+have collected comparable scarcity rents. Where capacity was slack, the reserve price introduced in December 2025
+cost at most {w[dwl_max_eth]:.1f} ETH (${w[dwl_max_usd]:,.0f}) in deadweight loss under the most elastic demand the
+data allow. Mempool records for {x[n_matched]:.1f} million blob transactions show that when the fee sits at its
+floor, capacity is slack: transactions miss about one block and are almost never priced out.
 
-EIP-4844 prices Ethereum's data-availability capacity ("blobs") by a mechanical controller rather than a
-market-clearing auction. We estimate rollups' demand response using the Pectra hard fork, which doubled blob
-capacity on a pre-announced date while the market was congested. The blob price fell from
-{h[head_p_pre]:.2f} mETH per blob (about ${h[head_usd_pre]:.2f}) to the 1-wei floor. Blobs purchased per L2
-transaction did not change: the pre-specified semi-elasticity is {h[head_eta]:.3f} log points per mETH/blob
-(95% CI {h[head_ci_eta_lo]:.3f} to {h[head_ci_eta_hi]:.3f}; placebo-date permutation p = {h[perm_p_beta]:.2f}).
-The implied point elasticity at the pre-shock price lies between {h[head_ci_eps_lo]:.3f} and
-{h[head_ci_eps_hi]:.3f}. Across {sc[n_specs_intensity]:,} alternative specifications the median is
-{sc[int_eta_median]:.3f}, and no specification in the headline family is significant. The volatility of congested
-prices implies an elasticity of the same order. Total blob purchases did rise at Pectra. A post-hoc comparison
-with chains that do not buy blobs suggests the rise came through L2 fees and L2 activity: blob demand as derived
-demand. That evidence is suggestive, not conclusive (placebo p = {pt[p_act]:.2f}). Mempool data show that at the 1-wei floor blob transactions are
-not rationed by queueing: waits are shortest there, and almost no transaction is priced out. With demand this
-inelastic, the controller's first-order effect is distributional. Of the {w[fees_dencun_eth]:,.0f} ETH
-(${w[fees_dencun_usd_m]:.1f}M) burned under Dencun, {w[fees_cong_share_dencun]:.0%} was paid in two congested
-quarters. The deadweight loss of the post-Fusaka reserve price is at most {w[dwl_max_eth]:.1f} ETH even under
-the most elastic demand we cannot rule out.
+# 1. Introduction
 
-## 1. Introduction
+Since March 2024, rollups have bought their data-availability capacity on Ethereum at a price set by formula. The
+EIP-4844 blob market [@eip4844] fixes a target and a maximum number of blobs per block and moves the blob fee
+exponentially in the cumulative gap between usage and target. The fee has a floor of 1 wei per unit of blob gas.
+In December 2025 a second rule, EIP-7918 [@eip7918], added a reserve price tied to the execution base fee. Neither
+rule looks at bids.
 
-Ethereum sells data-availability capacity to rollups through a posted price that no one sets. EIP-4844 fixes a
-per-block target and ceiling for "blobs" and lets a controller move the price exponentially in the cumulative
-deviation of usage from target. The design question this raises is old: how much does it matter that a price is
-set mechanically rather than by a market-clearing auction? The answer depends on one empirical object, the price
-elasticity of demand. If demand is elastic, a mis-set price misallocates capacity. If demand is inelastic, the
-price mainly moves money.
+Whether it matters that a price is mechanical depends on one number, the price elasticity of demand. If demand is
+elastic, a mis-set price changes who gets capacity and how much of it is used, and the welfare cost is
+allocative. If demand is inelastic, the same mis-set price changes mostly who pays, and the cost is a transfer.
+This paper estimates that elasticity and turns it into a welfare accounting.
 
-Estimating that elasticity is harder than the volume of on-chain data suggests:
-- The blob price is common to every buyer in a block, so cross-sectional comparisons carry no price variation.
-- Within a regime the price is an outcome of demand by construction.
-- For long stretches the price sits at a 1-wei floor where a log-price elasticity is not economically meaningful.
+Estimating it is harder than the volume of on-chain data suggests. The blob fee is common to every buyer in a
+block, so cross-sectional comparisons carry no price variation, and day fixed effects absorb all of it. Within a
+regime the fee is an outcome of demand by construction. For long stretches it sits at a floor of 1 wei, where a
+log-price elasticity is not economically meaningful. We therefore use a scheduled supply shock. The Pectra upgrade
+[@eip7691] doubled the blob target from 3 to 6 per block on 7 May 2025, a date fixed by client releases weeks
+earlier, at a time when usage had been at target for months. The fee fell from {h[head_p_pre]:.2f} mETH per blob
+to the floor within a day.
 
-We use a scheduled supply shock, the Pectra hard fork, which doubled capacity while the market was congested and
-dropped the price from about ${h[head_usd_pre]:.2f} per blob to effectively zero. We pre-registered the
-specification before estimating it, and we report the whole distribution of estimates across the judgement
-calls rather than a preferred point.
+We fixed the specification in writing and committed it before estimating it (commit `65ae268` in the replication
+repository), and we report every judgement call in a public decision log together with a specification curve.
 
-[To add: literature — EIP-1559 empirics, transaction-fee mechanism design, posted prices vs auctions, rollup
-economics.]
+The paper makes five contributions.
 
-Four findings.
+**1. A bound on the demand elasticity at the rollups' own margin.** When the price of a blob fell from about
+${h[head_usd_pre]:.2f} to zero, rollups did not buy more capacity per L2 transaction. We can rule out increases
+larger than {h[head_mde_pct_placebo]:.1f}%, which bounds the elasticity at the pre-shock price at
+{h[head_eps_placebo_lo]:.2f}. Unnormalized purchases rose {x[l15_pct]:.0f}%, an upper bound on the total response
+that still implies an elasticity no larger than {h[l15_eps_placebo_lo]:.2f} in absolute value. A price cut of
+100% leaves little room for the objection that the sample lacks variation.
 
-1. **Demand for blob capacity is close to perfectly inelastic at the direct margin.** When Pectra cut the blob
-   price from about ${h[head_usd_pre]:.2f} per blob to effectively zero, rollups did not buy more blob capacity per
-   unit of L2 activity.
-1b. **Any responsiveness runs through the rollups' users (post hoc, suggestive).** On OP-Stack chains the blob
-   fee passes into L2 fees almost mechanically. Blob-using L2s saw fees fall and activity rise relative to chains
-   that do not buy blobs.
-2. **The floor regime is excess supply, not queueing.** Transactions seen when the price is at the floor miss
-   fewer blocks than in any other state, and are almost never priced out.
-3. **The pricing rule's welfare consequences are transfers, not allocation.** Blob fees were a burn paid mostly
-   during two congested quarters, and the post-Fusaka reserve price costs almost nothing in allocative terms.
+**2. A welfare decomposition that separates transfers from allocative loss.** Rollups paid
+{w[fees_dencun_eth]:,.0f} ETH (${w[fees_dencun_usd_m]:.1f} million) in blob fees under the first regime.
+{w[fees_cong_share_dencun]:.0%} of this fell in 2024-Q4 and 2025-Q1, when usage averaged {w[cong_util]:.0%} of
+target and the binding constraint was capacity. In slack periods the fee is either at a
+floor worth nothing or at a reserve whose deadweight loss is at most {w[dwl_max_eth]:.1f} ETH over
+{w[reserve_days]} days.
 
-## 2. Institutional setting
+**3. Evidence that the floor regime is slack capacity, which corrects a natural reading of the mechanism.** A fee
+pinned at its floor looks like a price that has failed to clear the market, and one might expect allocation by
+queue. We match {x[n_matched]:.1f} million blob transactions to their first sighting in the public mempool.
+Transactions first seen at the floor miss {mp[dencun_floor_mean_passed_over]:.2f} blocks on average in the first
+regime, the fewest of any state, and {mp[dencun_floor_share_passed_blocks_priced_out]:.2%} of the blocks they miss
+price them out.
 
-- **EIP-4844 (Dencun).** Blob base fee = exp(excess / update fraction), with the excess updated each block by
-  (usage − target). The fee is floored at 1 wei per blob gas; 1 blob = 131,072 blob gas = 128 KiB of purchased
-  capacity. Target/max: 3/6 blobs.
-- **Pectra (EIP-7691).** Target/max 6/9 from 2025-05-07; the same fork includes EIP-7623 (calldata repricing).
-- **Fusaka (EIP-7918)** adds a reserve price tied to the execution base fee, acting on the excess-gas
-  transition. The blob-parameter-only forks (BPO1 10/15, BPO2 14/21) follow.
-- The header's excess already reflects EIP-7918, so the header-implied blob fee is valid in every regime: it
-  matches the fee actually paid within max(0.1%, 1 wei) for {a[price_agree_share]:.1%} of
-  {a[n_blob_txs_dated]:,} blob transactions.
+**4. Two identification strategies that fail for mechanical reasons.** The later capacity increases, BPO1 and
+BPO2 [@eip7892], have no first stage: usage was already below target and the reserve set the price. Variation in
+the execution base fee cannot satisfy the exclusion restriction for the blob price, because every blob rides in a
+transaction that pays execution gas at that same base fee. Reporting both saves other researchers the attempt.
 
-## 3. Data
+**5. Verification of the blob schedule from the protocol's own update rule.** We recompute the excess-blob-gas
+state of all {x[n_blocks_checked]:,} blocks from their parents. Each regime's rule explains every block, and the
+rules separate the regimes: the EIP-4844 rule mispredicts {fr[fusaka_share_mismatch_under_4844_rule]:.1%} of blocks
+after the Fusaka upgrade, although Fusaka left the blob target and maximum unchanged.
 
-- Execution-layer block headers from Dencun activation onward.
-- Every blob-carrying transaction, with rollup attribution from Blobscan.
-- Daily L2 fundamentals from **growthepie** (CC BY 4.0).
-- Mempool first-sighting times from **Xatu / ethPandaOps** (CC BY 4.0).
-- ETH/USD daily closes.
+# 2. Related literature
 
-Dataset: Harvard Dataverse doi:10.7910/DVN/4AOXKT (version 2).
+The closest economic literature studies transaction-fee mechanisms. @roughgarden2020 and @roughgarden2024 analyse
+EIP-1559 [@eip1559], the execution-gas analogue of the blob controller, as a mechanism design problem, asking
+whether users, block producers and coalitions have incentives to follow it. @ferreira2021 study dynamic
+posted-price mechanisms for the same market, and @leonardos2021 study the dynamics of the base-fee update rule.
+Empirical work on EIP-1559 by @reijsbergen2021 and @liu2022 measures fees and waiting times after its introduction.
+In Bitcoin, @huberman2021 model fees as the price users pay to avoid delay when capacity is fixed, and
+@easley2019 trace how fees evolved as block rewards fell. Our setting differs in two respects. The buyers number a few
+dozen rollups, and the product is data capacity that rollups must buy to settle their own
+customers' transactions. The question also differs: we ask what the mechanical price costs, which requires the
+demand elasticity, and prior work does not estimate it for blobs.
 
-Unattributed demand (rollup = unknown) is {a[unk_blobs_ALL]:.1%} of blobs, {a[unk_tx_ALL]:.1%} of transactions and
-{a[unk_fees_ALL]:.1%} of fees. By regime it ranges from {a[unk_blobs_pectra]:.1%} (Pectra) to {a[unk_blobs_bpo1]:.1%}
-(BPO1) of blobs.
+Work on the blob market itself is recent. @crapis2023 analyse the economics of EIP-4844 and rollups' posting
+strategies, including sharing blobs. @mamageishvili2023 derive batch-posting strategies for rollups facing a
+variable base-layer price. @park2024 describe the first months of the blob market, including rollup transaction
+dynamics and the blob fee. @albassam2018 set out the data-availability problem that makes rollups buy this
+capacity at all. We add a design-based elasticity estimate and a welfare accounting built on it.
 
-Celestia series come from growthepie rather than Celenium, whose API was unreachable from our collection host. Rollup-level Celestia usage is therefore unavailable.
+The welfare question connects to the comparison of prices and quantities as control instruments [@weitzman1974]
+and to the empirical comparison of posted prices and auctions [@einav2018]. The blob controller is a hybrid: a
+quantity target enforced by a price that adjusts with a lag. Our finding that demand is inelastic places it in the
+region where the choice of instrument matters for revenue and volatility much more than for allocation.
 
-"Blob bytes" on Ethereum measure purchased capacity, not payload; Celestia's figures are bytes posted.
+On method, we follow the regression-discontinuity-in-time literature on short windows and trend flexibility
+[@hausman2018], estimate count outcomes by Poisson pseudo-maximum likelihood [@santossilva2006], base inference
+for a single event on placebo dates [@conley2011], report wild cluster bootstraps for few clusters
+[@cameron2008; @kline2012; @mackinnon2017; @roodman2019], and summarise sensitivity with a specification curve
+[@simonsohn2020].
 
-## 4. Descriptive facts (Table 1, Figure 1)
+# 3. Institutional setting
 
-- The blob base fee sat at the floor in {d[dencun_share_blocks_at_floor]:.1%} of Dencun blocks and
-  {d[pectra_share_blocks_at_floor]:.1%} of Pectra blocks, and in none after Fusaka.
-- Dencun is not one regime. Its floor incidence concentrates in 2024-Q1 to 2024-Q3 (2024-Q3 fees:
-  {w[fees_2024q3_eth]:.1g} ETH). In 2024-Q4 and 2025-Q1 usage sat at target and the price was far above the floor. Samples are split by calendar quarter only: floor incidence is an outcome.
-- Under the reserve regime utilization fell to {d[bpo1_utilization_vs_target]:.0%} (BPO1) and
-  {d[bpo2_utilization_vs_target]:.0%} (BPO2) of target. The reserve, not scarcity, set the price.
+A blob is 131,072 units of blob gas, or 128 KiB of capacity that consensus nodes keep for about 18 days. Rollups
+buy blobs in type-3 transactions and post their compressed transaction data into them. We measure quantities as
+blobs purchased, which is capacity bought: a rollup pays for a whole blob whether it fills it or not.
 
-## 5. Identification
+Each block header records the excess blob gas, the cumulative usage above target carried forward from earlier
+blocks. The blob fee is the exponential of the excess divided by an update fraction, with a floor of 1 wei per
+unit of blob gas. In the first regime, Dencun (13 March 2024 to 7 May 2025), the target was 3 blobs and the maximum
+6. Pectra raised them to 6 and 9 [@eip7691]; the same upgrade repriced calldata [@eip7623]. Fusaka (3 December 2025)
+kept 6 and 9 and introduced EIP-7918: when the execution cost of a blob exceeds its blob fee, the excess can no
+longer fall, which puts a floor under the blob fee at roughly one sixteenth of the execution base fee per unit of
+blob gas. Two blob-parameter-only upgrades followed, BPO1 (9 December 2025; 10 and 15) and BPO2 (7 January 2026;
+14 and 21).
 
-**Why a fork, and why only Pectra.** The blob price is common to all rollups in a block, so day fixed effects
-absorb all price variation, and within-regime price variation is endogenous (the controller responds to demand).
-We therefore use a scheduled supply shock.
+Two facts from the protocol matter for the analysis. The header-implied fee is valid in every regime, because
+EIP-7918 changes only how the excess evolves and the fee is computed from the excess as before; it matches the fee paid within 0.1%
+or 1 wei for {a[price_agree_share]:.1%} of {a[n_blob_txs_dated]:,} blob transactions. And the regimes are
+identified exactly by the update rule (Appendix A).
 
-Pectra doubled capacity while the market was congested. First stage: π = {h[head_pi]:.2f} mETH/blob
-(Newey–West SE {h[head_se_pi]:.2f}).
+# 4. Data
 
-The later capacity increases (BPO1, BPO2) came when usage was already below target. They left the price at the
-reserve, so they have no first stage and identify nothing. Post-Fusaka price variation comes from the execution
-base fee, which fails exclusion twice:
-- It moves with L1 congestion, which co-moves with L2 activity.
-- It prices the carrier transaction's own execution gas, so it raises posting costs through a channel other than
-  the blob price.
+The data combine five sources. Block headers from Dencun activation onward, collected over public JSON-RPC,
+supply the fee state and blob usage of every block. Every blob-carrying transaction, with its rollup label, comes
+from the Blobscan index [@blobscan]. Daily L2 activity, including transaction counts and median transaction fees,
+comes from growthepie [@growthepie], published under CC BY 4.0. First mempool sightings of blob transactions for
+the Dencun and Pectra regimes come from the Xatu sensor network of ethPandaOps [@xatu], also CC BY 4.0. ETH/USD
+closes come from Binance, with Coinbase as fallback. The deposited dataset is described in Section 13.
 
-An exploratory intraday regression shows the contamination directly. Within a day, posting rises by
-{ix[beta_blobs]:.3f} log points (SE {ix[se_blobs]:.3f}) per log point of execution base fee, the wrong sign for a
-cost response.
+Rollup labels leave {a[unk_blobs_ALL]:.1%} of blobs unattributed. The share is larger by other measures,
+{a[unk_tx_ALL]:.1%} of blob transactions and {a[unk_fees_ALL]:.1%} of fees, and it varies by regime from
+{a[unk_blobs_pectra]:.1%} of blobs under Pectra to {a[unk_blobs_bpo1]:.1%} under BPO1. Unattributed demand enters
+every aggregate and is excluded from rollup-level regressions, where a residual category has no meaningful fixed
+effect; including it as one more unit changes the levels estimate from {h[s1_beta]:.3f} to {h[s1b_beta]:.3f}.
 
-**Outcome.** ETH/USD rose sharply the day after Pectra, which plausibly raised L2 activity. The pre-specified
-outcome is therefore blobs purchased per L2 transaction (PPML with L2 transactions as an offset). This isolates
-the direct margins: fill rate, batching and DA-layer choice. The total-demand estimate is reported alongside. The pre-specification assumed the omitted margin, pass-through
-of DA costs into L2 activity, was negligible. Section 6b shows that premise was wrong.
+Celestia and EigenDA enter only through growthepie's daily aggregates. Rollup-level usage of these alternative
+layers is not observable here (Section 12).
 
-**Specification (pre-registered in `notes/PRESPEC.md` before estimation).** Rollup × day. Rollup fixed effects,
-rollup-specific linear trends, day-of-week fixed effects. ±28 days around the fork, fork day excluded. Price in
-mETH per blob, with the semi-elasticity η = β/π.
+# 5. Descriptive facts
 
-A log-price elasticity is not identified in any meaningful sense here. Identified off a move to the floor, it
-depends on the arbitrary floor level: the same β gives {h[s5_elast_floor_1]:.4f} with a 1-wei floor and
-{h[s5_elast_floor_1000000]:.4f} with a 10⁶-wei floor.
+Table 1 and Figure 1 describe the market. Three features shape the analysis.
 
-## 6. Results
+The floor is common but not universal. The fee sat at 1 wei in {d[dencun_share_blocks_at_floor]:.1%} of Dencun
+blocks and {d[pectra_share_blocks_at_floor]:.1%} of Pectra blocks, and in none after Fusaka.
 
-**Headline (Table 2).**
-- β = {h[head_beta]:.3f} (SE {h[head_se_beta_rollup]:.3f} clustered by rollup; {h[head_se_beta_twoway]:.3f} two-way).
-- N = {h[head_n_obs]:,} rollup-days ({h[head_n_rollups]} rollups).
-- η = {h[head_eta]:.3f} (SE {h[head_se_eta]:.3f}).
-- Placebo-date permutation over {h[n_placebo]} placebo dates: p = {h[perm_p_beta]:.2f} (Figure 2).
+The first regime had two phases. Through 2024-Q3 usage was mostly below target and the fee mostly at the floor;
+fees for all of 2024-Q3 came to {w[fees_2024q3_eth]:.6f} ETH. From October 2024 until Pectra, usage sat at
+{w[cong_util]:.0%} of target and the daily mean fee averaged {w[cong_mean_p]:.2f} mETH per blob with a standard
+deviation of {w[cong_sd_p]:.2f}. We split the regime by calendar quarter only; floor incidence is an outcome and
+cannot define a sample.
 
-**Fragility (Figure 3).** Across {sc[n_specs_intensity]} DA-intensity specifications, the median η is
-{sc[int_eta_median]:.3f} and the 5th–95th percentile range is {sc[int_eta_p05]:.3f} to {sc[int_eta_p95]:.3f}.
-{sc[int_share_beta_sig5]:.0%} are significant at 5% under cluster-robust SEs. The placebo test shows those SEs are too
-small: the placebo SD of β is {h[placebo_sd_beta]:.3f}, against a clustered SE of {h[head_se_beta_rollup]:.3f}. None of the {sc[off_n_specs]:.0f} specifications with activity as an offset is significant. The headline is
-less elastic than {sc[head_pctile]:.0%} of these specifications. The median specification implies an elasticity
-of {sc[int_eps_median]:.3f} at the pre-shock price. Either way, demand at the direct margin is very inelastic.
+After Fusaka the reserve set the price. Usage fell to {d[bpo1_utilization_vs_target]:.0%} of target under BPO1 and
+{d[bpo2_utilization_vs_target]:.0%} under BPO2, yet the fee never touched the floor, and the reserve governed the
+update in {fr[bpo2_share_mismatch_under_4844_rule]:.0%} of BPO2 blocks.
 
-**Heterogeneity (Figure 4).** {sc[het_n_pos]} of {sc[het_n]} rollups with a defined estimate have β > 0 (the
-equal-weighted mean is {sc[het_mean_beta]:.3f}). The volume-weighted pooled estimate is pulled negative by Base
-(β = {sc[het_base_beta]:.3f}).
+{tbl[t1]}
 
-**Total demand.** Without normalizing by activity, blobs rose by β = {h[s1_beta]:.3f} (SE {h[s1_se_beta_rollup]:.3f})
-across {h[s1_n_rollups]} rollups. This is larger than at every one of the {h[n_placebo]} placebo dates
-(permutation p < {pinv:.3f}). With DA intensity unchanged, the rise is a rise in L2 activity. Whether that activity rise
-is a price response or the ETH rally is the question of Section 6b.
+![Blob market, daily, 13 March 2024 to 28 September 2026. Top: mean blob fee over all blocks (log scale). Middle: blobs per block against target and maximum. Bottom: share of blocks at the 1-wei floor. Shaded: reserve-price regime from Fusaka.](../output/figures/fig1_market_timeseries.png)
 
-## 6b. Derived demand: pass-through to L2 fees (post hoc)
+# 6. Identification and estimation
 
-*This section was not pre-specified. It was added after the data showed that the pre-specification's premise, that
-pass-through was negligible, was wrong (DECISIONS D-24).*
+## 6.1 The supply shock
 
-Before Pectra, DA cost per L2 transaction on OP-Stack chains was of the same order as the entire median L2 fee.
-We compare {pt[n_treated]} blob-DA rollups with {pt[n_control]} L2s and sidechains that do not buy Ethereum blobs.
-The design uses chain and day fixed effects, so the day effects absorb the ETH rally; unit = chain × day,
-N = {pt[n_obs]:,}.
+Pectra is the only upgrade in the sample that moved the price materially. In the 28 days before it, usage was at
+target and the mean fee was {h[head_p_pre]:.2f} mETH per blob; in the 28 days after, the fee was at the floor. The
+first stage, a day-level regression of the fee on a post-fork indicator with a trend and day-of-week effects, gives
+a change of {h[head_pi]:.2f} mETH per blob (Newey-West SE {h[head_se_pi]:.2f}). Blob capacity cannot be stored, so
+demand on either side of the fork is not shifted by the fork itself; we drop the fork day.
 
-- **Fees.** Blob users' median L2 fees fell by {pt[b_fee]:.2f} log points (SE {pt[se_fee]:.2f}; placebo p =
-  {pt[p_fee]:.2f}).
-- **Activity.** Their L2 transactions rose by {pt[b_act]:.2f} (SE {pt[se_act]:.2f}; placebo p = {pt[p_act]:.2f}).
-- **Dose-response.** Within blob users, activity rose more where fees fell more: slope {pt[dose_b]:.3f} (SE
-  {pt[dose_se]:.3f}, N = {pt[dose_n]} chains).
+The pre-shock daily fee ranged from 0 to {h[ev_pre_p_max]:.2f} mETH per blob, so the estimates speak to prices in
+that range. Only {h[ev_n_days_above]} days of the first two regimes had a higher daily fee, but those days carried
+{h[ev_share_fees_above]:.0%} of all fees paid in the two regimes. Outside that range our bound does not apply.
 
-The activity margin implies a blob-demand semi-elasticity of {pt[eta_activity_margin]:.2f} per mETH/blob. That
-is small in absolute terms, but it is where all measurable responsiveness lies.
+## 6.2 Estimating equations
 
-Limits:
-- It is one event, and the activity effect clears the placebo distribution only at the 10% level.
-- Most controls use their own gas tokens, so an ETH-ecosystem-specific shock is not ruled out. The dose-response
-  argues against it being the whole story.
-- OP Stack's Isthmus upgrade arrived the same week.
+The unit of observation is a rollup-day. Let $B_{{it}}$ be blobs bought by rollup $i$ on day $t$, zero-filled between
+its first and last post, and $T_{{it}}$ its L2 transactions. We estimate by Poisson pseudo-maximum likelihood
 
-**Fusaka (low power).** With a ±5-day window, the reserve's introduction raised the price by {h[s2_pi]:.3f}
-mETH/blob, and β = {h[s2_beta]:.3f} (two-way SE {h[s2_se_beta_twoway]:.3f}).
+$$E[B_{{it}}] = T_{{it}}^{{\,k}} \exp(\alpha_i + \gamma_i t + \delta_{{w(t)}} + \beta\, \mathrm{{Post}}_t),$$
 
-**A second, independent check.** In the congested Dencun quarters the daily price had SD {w[cong_sd_p]:.2f}
-mETH/blob with capacity pinned at target. If detrended L2 activity (SD {w[l2_resid_sd]:.1%}) were the only
-demand shifter, the implied |η| is {w[implied_eta]:.3f}. The spec-curve's elastic tail (|η| ≈
-{sc[int_eta_p05]:.2f}) would require daily demand shifts of {w[implied_shift_sd_p5]:.0%}.
+with rollup fixed effects $\alpha_i$, rollup-specific linear trends $\gamma_i t$ and day-of-week effects
+$\delta_{{w(t)}}$, over 28 days either side of the fork. In the specification we fixed before estimation, $k = 1$:
+L2 transactions enter as an offset and the outcome is blobs per L2 transaction. We chose it because ETH rose 22% the
+day after Pectra, which plausibly raised L2 activity at the moment the fee fell. The unnormalized specification sets
+$k = 0$ and measures blob purchases directly; we report it alongside as co-primary. The semi-elasticity is
+$\eta = \beta/\pi$, where $\pi$ is the first stage, in log points per mETH per blob, and the elasticity at the
+pre-shock price $\bar p$ is $\eta \bar p$.
 
-## 7. Mechanism: is there queueing at the floor?
+We measure the price in mETH per blob. A log-price coefficient identified off a move to the floor depends on where
+the floor happens to be: the same $\hat\beta$ gives {h[s5_elast_floor_1]:.4f} with the actual 1-wei floor and
+{h[s5_elast_floor_1000000]:.4f} if the floor were $10^6$ wei. Table 2 reports the log-price coefficient for
+completeness.
 
-The original motivation assumed that at the floor "allocation happens through queueing rather than price". At
-the floor the price exceeds the market-clearing price (usage < target), which is excess supply; the prediction
-is no queueing.
+## 6.3 Inference with one event and few clusters
 
-Xatu mempool sightings match {mp[match_dencun]:.0%} (Dencun) and {mp[match_pectra]:.0%} (Pectra) of blob
-transactions (Figure 5).
+The design rests on one event, so standard errors clustered by rollup describe cross-rollup noise but not the risk
+of a common shock on the fork date. Our reported intervals therefore come from placebo dates [@conley2011]: we
+apply the identical estimator at each of {h[n_placebo]} placebo break dates between {h[placebo_lo]} and
+{h[placebo_hi]} whose windows exclude Pectra, and invert the distribution of placebo coefficients. The placebo
+standard deviation of $\hat\beta$ is {h[placebo_sd_beta]:.3f}, against a clustered standard error of
+{h[head_se_beta_rollup]:.3f}.
 
-In Dencun, transactions first seen when the price is at the floor:
-- miss on average {mp[dencun_floor_mean_passed_over]:.2f} blocks before inclusion, against
-  {mp[dencun_cong_mean_passed_over]:.2f} when the previous block was full;
-- are priced out in {mp[dencun_floor_share_passed_blocks_priced_out]:.2%} of the blocks they miss;
-- in {mp[dencun_floor_share_passed_blocks_with_spare_capacity]:.0%} of those missed blocks, there was spare blob
-  capacity for them.
+Clustering by rollup has a second problem. Base supplies most of the blob volume, and in the headline it carries
+95% of the variance of the score. We report the restricted wild score bootstrap of @kline2012, the maximum
+likelihood analogue of the wild cluster bootstrap-t, enumerating all 32,768 Rademacher sign vectors for 15
+clusters. In a simulation with 15 equal clusters and common day shocks it rejects a true null at 7.3% with a
+nominal 5% level.
 
-Within day and rollup, the floor changes the probability of missing the first block by
-{mp[reg_dencun_waited_b_floor]:+.3f} (SE {mp[reg_dencun_waited_se_floor]:.3f}), against a base of
-{mp[reg_dencun_waited_mean_base]:.2f}.
+# 7. Results: a bound on the elasticity
 
-Missing the very next block is common in every state, largely because inclusion takes time to build (our
-first-opportunity definition allows no build latency). Among floor transactions that were delayed:
-- {mp[dencun_floor_share_delayed_txs_never_capacity_or_price_constrained]:.0%} were passed over only by blocks
-  with room for them, and were never priced out;
-- the rest met at least one full block, because usage bursts reach the maximum even when the excess is zero.
+Table 2 reports the estimates.
 
-Either way the delay is about one block, about 12 seconds. Price rationing does appear in congested Dencun
-states, where {mp[dencun_cong_share_passed_blocks_priced_out]:.0%} of passed-over blocks priced the transaction
-out. The floor regime is a regime of slack, not of queues.
+{tbl[t2]}
 
-## 8. Welfare
+Blobs per L2 transaction changed by {x[head_pct]:.1f}% when the fee fell to the floor. The reported interval runs
+from {x[head_lo_pct]:.1f}% to {x[head_hi_pct]:+.1f}%, and the placebo permutation p-value is {h[perm_p_beta]:.2f}
+(Figure 2). Removing a price of ${h[head_usd_pre]:.2f} per blob raised blob intensity by at most
+{h[head_mde_pct_placebo]:.1f}%. Under exponential demand this bounds the semi-elasticity at
+{h[head_eta_placebo_lo]:.3f} per mETH per blob and the elasticity at the pre-shock price at
+{h[head_eps_placebo_lo]:.2f}. The wild bootstrap interval is narrower, {x[head_wild_lo_pct]:.1f}% to
+{x[head_wild_hi_pct]:+.1f}%.
 
-**Deadweight loss of the reserve.** Under exponential demand calibrated to each day, the reserve's deadweight loss
-relative to allocating slack capacity at zero price is:
-- {w[dwl_ci_eth]:.3f} ETH at the headline's elastic CI bound;
-- at most {w[dwl_max_eth]:.2f} ETH (${w[dwl_max_usd]:,.0f}) over {w[reserve_days]} days at the most elastic total-demand bound;
-- in every case at most {w[dwl_max_share]:.0%} of reserve-regime fees.
+Unnormalized purchases on the same 15 rollups rose {x[l15_pct]:.0f}% (column 2), and {x[s1_pct]:.0f}% across all
+{h[s1_n_rollups]} labelled rollups (column 3). The placebo interval for column 2, {x[l15_lo_pct]:.0f}% to
+{x[l15_hi_pct]:.0f}%, excludes zero, and no placebo date produced a coefficient as large (permutation p below
+{x[pinv]:.3f}). The wild bootstrap interval, {x[l15_wild_lo_pct]:.0f}% to {x[l15_wild_hi_pct]:.0f}%, does not
+exclude zero. The two procedures disagree about significance; they agree on magnitude. Taking the placebo bound,
+the elasticity of total blob purchases at the pre-shock price is no larger than {h[l15_eps_placebo_lo]:.2f} in
+absolute value. This bound includes any rise in L2 activity caused by the rally in ETH, so it overstates the price
+response if anything.
 
-At the 1-wei floor the deadweight loss is zero to machine precision.
+The two columns differ because L2 activity rose while blobs per transaction did not. Normalizing by L2
+transactions would attenuate the estimate if cheaper blobs raised L2 activity; Section 11 examines that channel. For
+the magnitude bound it does not matter: both columns imply demand well inside the inelastic range.
 
-These bounds already cover the activity margin of Section 6b. Its implied semi-elasticity
-({pt[eta_activity_margin]:.2f}) is less elastic than the most elastic value used ({w[eta_4]:.2f}), so the
-derived-demand channel does not change the conclusion.
+![Coefficients at 516 placebo break dates in the first two regimes, same estimator and window. The vertical line is the Pectra estimate.](../output/figures/fig2_placebo.png)
 
-**Distributional effect.** The rule's first-order effect is distributional:
-- {w[fees_dencun_eth]:,.0f} ETH (${w[fees_dencun_usd_m]:.1f}M) burned under Dencun, {w[fees_cong_share_dencun]:.0%}
-  of it in 2024-Q4 and 2025-Q1;
-- {w[fees_pectra_eth]:.1f} ETH under Pectra;
-- {w[fees_reserve_eth]:.1f} ETH across all reserve regimes.
+**Specification curve.** Across {sc[n_specs_intensity]} specifications of the intensity outcome that vary the
+window, trends, the treatment of L2 activity, the estimator, the price measure, day-of-week effects and
+zero-filling, the median semi-elasticity is {sc[int_eta_median]:.3f} per mETH per blob and the 5th to 95th
+percentile range is {sc[int_eta_p05]:.3f} to {sc[int_eta_p95]:.3f} (Figure 3). None of the {sc[off_n_specs]:.0f}
+specifications that treat L2 activity as an offset is significant at 5% even with clustered standard errors, which
+the placebo distribution shows are too small. The headline is less elastic than {sc[head_pctile]:.0%} of these
+specifications; the median specification implies an elasticity of {sc[int_eps_median]:.3f} at the pre-shock price.
+Our conclusion rests on the range, and every part of it is inelastic.
 
-The Pectra capacity increase cut fees from {w[pectra_fee_pre_eth_day]:.1f} ETH per day (${w[pectra_fee_pre_usd_day]:,.0f})
-to effectively zero, with no change in the blob intensity of L2 activity.
+![Specification curve for the semi-elasticity of blobs per L2 transaction. Bars: 95% delta-method intervals from clustered errors. Lower panel: choices in each specification.](../output/figures/fig3_spec_curve.png)
 
-**Counterfactual mechanisms (qualitative; not estimated).** With demand this inelastic at the direct margin, the
-mechanisms we can compare differ mainly in who pays, not in who is served.
+**Heterogeneity.** Estimated one rollup at a time, {sc[het_n_pos]} of {sc[het_n]} rollups show a rise in
+intensity; the equal-weighted mean is {sc[het_mean_beta]:.3f} log points (Figure 4). Base, with the largest
+volume, has {sc[het_base_beta]:.3f} and pulls the pooled estimate below zero. The sign of the pooled estimate means
+little; its size is what matters.
 
-- **Uniform-price auction at the same target.** In slack periods it would clear at zero, as the floor
-  effectively does. In congested periods it would clear where demand meets the target, as the controller does
-  on average. Because demand is this inelastic, any mechanism that clears fixed capacity would produce volatile
-  prices; the congested-quarter SD was {w[cong_sd_p]:.2f} mETH/blob around a mean of {w[cong_mean_p]:.2f}. The
-  controller adds lag and overshooting, and we do not separate the two components.
-- **Fixed posted price.** A price below the clearing level in congested periods would force rationing by other
-  means (priority fees, delay). A price above it in slack periods would forgo usage worth only the Harberger
-  triangles of Section 8.
+![Coefficient on Post estimated separately for each rollup, with 95% intervals. Dashed line: pooled estimate.](../output/figures/fig4_heterogeneity.png)
 
-Allocative differences between all three are bounded by the same small deadweight-loss numbers. The
-first-order differences are revenue (burn) and volatility.
+**A second source of evidence.** In the congested quarters the daily fee had a standard deviation of
+{w[cong_sd_p]:.2f} mETH per blob while usage stayed near target. If demand shifts were as volatile as detrended L2
+activity, whose standard deviation was {w[l2_resid_sd]:.1%}, a fee clearing fixed capacity would move by that
+amount divided by the semi-elasticity. The implied semi-elasticity is {w[implied_eta]:.3f} per mETH per blob, close
+to the specification-curve median. The elastic tail of the curve, near {sc[int_eta_p05]:.2f}, would require daily
+demand shifts with a standard deviation of {w[implied_shift_sd_p5]:.0%}. This check is a calibration, and it
+points the same way.
 
-## 9. Limitations
+**Fusaka.** The reserve's introduction raised the fee from zero to {h[s2_p_post]:.3f} mETH per blob (about
+${x[s2_usd]:.2f}) for the five days before BPO1; blob purchases per L2 transaction changed by {h[s2_beta]:.3f} log
+points (two-way SE {h[s2_se_beta_twoway]:.3f}). Five days and a price change of that size add little information.
 
-- **One event.** The design rests on one supply shock, so the inference is by placebo dates.
-- **EIP-7623** in the same fork raised calldata costs. Rollups posting calldata may have moved to blobs, biasing
-  the response toward elastic, which makes the null conservative.
-- **Payload not observed.** The deposit records purchased capacity, not payload, so fill rates cannot be
-  observed directly.
-- **Coverage.** The DA-intensity sample is 15 rollups with growthepie coverage; they carry most blobs but not the
-  long tail.
-- **Latency costs.** These are measured only as blocks missed, not valued.
-- **No rollup-level migration evidence.** Celenium was unreachable from the collection host.
+# 8. The floor regime is slack capacity
 
-## 10. Conclusion
+A fee pinned at 1 wei looks like a price that has failed to clear, and a natural reading is that allocation then
+happens by queue. The protocol logic says otherwise. The fee reaches the floor only after usage has run below
+target, so capacity is left over, and any rollup willing to pay 1 wei can be served. Queueing should appear
+instead when demand jumps faster than the exponential fee can follow and blocks fill.
 
-The rollups that buy Ethereum's blob space barely respond to its price at the margin they control. When the price
-fell to zero they did not post more capacity per transaction. The volatility of congested prices implies the
-same, and delays at the floor are not queues.
+We test this with {x[n_matched]:.1f} million blob transactions matched to their first mempool sighting,
+{mp[match_dencun]:.0%} of Dencun and {mp[match_pectra]:.0%} of Pectra blob transactions. The {x[n_mempool]:.1f}
+million first seen before inclusion enter the analysis; the rest were first seen after inclusion, a sign of sensor
+lag. For each we count the
+blocks proposed between first sighting and inclusion and classify the state the transaction faced using only
+information fixed before it could be included: whether the next block's fee was at the floor, and whether the
+preceding block was full.
 
-Whatever responsiveness exists appears to run through their users: blob costs pass into L2 fees, and L2 activity
-follows. This evidence is suggestive, and a second clean supply shock in a congested market would be needed to
-settle it.
+{tbl[t3]}
 
-For mechanism design the implication is that the pricing rule matters mainly for who pays and how much, not for
-who gets capacity. The largest price episode in the sample, which carried {w[fees_cong_share_dencun]:.0%} of
-Dencun's fees, ended with a capacity increase, not with a change to the pricing rule.
+Transactions first seen at the floor wait the least (Table 3 and Figure 5). In Dencun they missed
+{mp[dencun_floor_mean_passed_over]:.2f} blocks on average, against {mp[dencun_cong_mean_passed_over]:.2f} when the
+previous block was full, and {mp[dencun_floor_share_passed_blocks_priced_out]:.2%} of the blocks they missed priced
+them out. Within rollup and day, the floor changed the probability of missing the first eligible block by
+{mp[reg_dencun_waited_b_floor]:+.3f} (SE {mp[reg_dencun_waited_se_floor]:.3f}) in Dencun and
+{mp[reg_pectra_waited_b_floor]:+.3f} (SE {mp[reg_pectra_waited_se_floor]:.3f}) in Pectra, against base rates of
+{mp[reg_dencun_waited_mean_base]:.2f} and {mp[reg_pectra_waited_mean_base]:.2f}.
+
+Missing the first block is common in every state. Our definition of the first eligible block allows no time for
+block building, so part of the base rate is mechanical. Of the delayed floor transactions, {x[floor_full_share]:.0%} met at least
+one full block: usage arrives in bursts, and a block can fill even when the running excess is zero. The delay in
+those cases is about one block, 12 seconds. Pricing out is a feature of congestion. In congested Dencun states
+{mp[dencun_cong_share_passed_blocks_priced_out]:.0%} of missed blocks priced the transaction out.
+
+![Cumulative share of blob transactions by blocks missed before inclusion, by the state when first seen. Source: Xatu / ethPandaOps, CC BY 4.0.](../output/figures/fig5_mempool.png)
+
+# 9. Welfare: transfer and allocative loss
+
+The elasticity bound decides the welfare accounting. We model demand as exponential in the fee, $Q(p) = A
+e^{{\eta p}}$, calibrated each day to the observed fee and quantity.
+
+**Slack capacity.** When usage is below target the protocol treats the marginal cost of capacity as zero, and any
+positive fee excludes some purchases worth less than the fee. At the 1-wei floor that loss is zero to machine
+precision. Under the EIP-7918 reserve, when usage averaged {w[reserve_util]:.0%} of target, the loss is the
+triangle between the demand curve and the fee. Table 5 evaluates it at the elastic end of each reported interval
+and at more elastic values from the specification curve. At the headline's bound it is {w[dwl_ci_eth]:.3f} ETH
+(${w[dwl_ci_usd]:,.0f}) over {w[reserve_days]} days. Even with the 5th percentile of the total-demand
+specifications, which we regard as confounded, it is {w[dwl_max_eth]:.2f} ETH (${w[dwl_max_usd]:,.0f}), or
+{w[dwl_max_share]:.0%} of the fees collected under the reserve.
+
+**Binding capacity.** In 2024-Q4 and 2025-Q1 capacity was full and rollups paid {w[fees_cong_eth]:,.0f} ETH
+(${w[fees_cong_usd_m]:.1f} million), {w[fees_cong_share_dencun]:.0%} of all Dencun fees. With capacity fixed at
+target, some mechanism has to decide who posts, and a uniform-price auction for the same capacity would clear
+where demand meets the target. On average the controller did the same: usage was {w[cong_util]:.0%} of target. The
+fees were scarcity rents on fixed capacity, burned by the protocol, and an auction would have collected rents of
+similar size. What the controller adds is lag and overshooting. With demand this inelastic, any mechanism that
+clears fixed capacity produces a volatile price, and we do not separate the controller's contribution from that of
+demand.
+
+**Capacity.** Pectra cut fees from {w[pectra_fee_pre_eth_day]:.1f} ETH per day (${w[pectra_fee_pre_usd_day]:,.0f})
+to effectively zero with no measurable change in blob intensity. The largest price episode in the sample ended
+with a capacity increase, and the transfer ended with it.
+
+{tbl[t4a]}
+
+{tbl[t4b]}
+
+# 10. Two strategies that fail
+
+**Later capacity increases.** BPO1 and BPO2 raised the target to 10 and then 14 blobs. By then usage was well
+below target and the fee was set by the reserve, so extra capacity could not lower it: the mean fee in the 28 days
+around BPO2 was of the order of 0.001 mETH per blob on both sides. A capacity shock identifies a demand curve only
+if it moves the price. These two did not.
+
+**Execution base fee as an instrument.** After Fusaka the reserve ties the blob fee to the execution base fee, and
+one might use spikes in the base fee from activity unrelated to rollups, such as token launches, as an instrument.
+The exclusion restriction fails before any argument about correlated demand. Every blob is carried by a type-3
+transaction that pays execution gas at the same base fee, so the base fee raises the cost of posting through the
+carrier transaction as well as through the reserve, and both channels are proportional to it. At most, base-fee
+variation identifies the response to the full cost of a post. Even that version fails in our data. Within a day,
+with rollup-by-day and rollup-by-hour-of-day fixed effects, blob purchases rise by {ix[beta_blobs]:.3f} log points
+(SE {ix[se_blobs]:.3f}, N = {ix[n_obs]:,.0f} rollup-hours) for each log point of base fee. A cost response would have
+the opposite sign; the estimate is what one expects if busy hours on the base layer are also busy hours on
+rollups.
+
+# 11. Exploratory analysis: pass-through to L2 users (post hoc)
+
+This section was not part of the specification fixed before estimation. We added it after the data contradicted
+an assumption behind that specification, namely that blob costs are too small to affect L2 fees. They are not. Before Pectra,
+blob cost per L2 transaction on OP Stack chains was of the same order as the entire median L2 fee. We treat what
+follows as motivation for a separate, pre-specified study.
+
+We compare {pt[n_treated]} rollups that buy blobs with {pt[n_control]} L2s and sidechains that do not, with chain
+and day fixed effects over the same window (N = {pt[n_obs]:,} chain-days). Day effects absorb the ETH rally. Blob
+users' median L2 fees changed by {x[fee_pct]:.0f}% relative to the comparison chains (SE {pt[se_fee]:.2f} log points,
+placebo p = {pt[p_fee]:.2f}), and their L2 transactions rose {x[act_pct]:.0f}% (SE {pt[se_act]:.2f} log points,
+placebo p = {pt[p_act]:.2f}). Within blob users, activity rose more where fees fell more: the slope is
+{pt[dose_b]:.3f} (SE {pt[dose_se]:.3f}, N = {pt[dose_n]} chains). Figure 6 plots the chain-level changes.
+
+The pattern fits demand for blobs derived from demand for L2 transactions, with the price passed through to L2
+users. The evidence is thin. It rests on one event, the activity effect clears the placebo distribution only at
+the 10% level, most comparison chains use their own gas tokens, and OP Stack's Isthmus upgrade arrived the same
+week. A second supply shock in a congested market, or rollup-level fee data at higher frequency, would settle it.
+If the channel is real, its implied semi-elasticity of {pt[eta_activity_margin]:.2f} per mETH per blob is less
+elastic than values already in Table 5, so the welfare accounting does not change.
+
+![Change in median L2 fee and in L2 transactions, 28 days after against 28 days before Pectra, by chain. Post hoc. Source: growthepie, CC BY 4.0.](../output/figures/fig6_passthrough.png)
+
+# 12. Limitations
+
+The design rests on a single event. Placebo dates measure how unusual the estimate is, but they cannot rule out a
+shock specific to 7 May 2025. Pectra also raised the cost of calldata [@eip7623]. A rollup still posting calldata
+would have moved to blobs for that reason, which would bias the measured response upward; the bound is
+conservative in that direction.
+
+The bound holds for fees between zero and {h[ev_pre_p_max]:.2f} mETH per blob. The {h[ev_n_days_above]} days with
+higher fees carried {h[ev_share_fees_above]:.0%} of the fees paid in the first two regimes, and demand could be more
+elastic at those prices.
+
+We observe capacity bought; payload is unobserved. Rollups can respond to price by filling blobs more fully, and our
+outcome captures that margin only through the number of blobs bought.
+
+Rollup-level migration between data-availability layers is not observable here. Celenium, the Celestia indexer
+that would provide rollup-level usage of Celestia, blocks our collection host, and no alternative source was
+available. The paper uses growthepie's aggregate cross-layer series instead, which cannot show whether a given
+rollup moved its data.
+
+Unattributed blob demand is {a[unk_blobs_ALL]:.1%} of blobs and {a[unk_fees_ALL]:.1%} of fees. It enters the
+welfare totals and one robustness check but not the rollup-level regressions.
+
+# 13. Conclusion
+
+Rollups barely respond to the price of blob capacity at the margin they control. Removing a price of
+${h[head_usd_pre]:.2f} per blob changed their purchases per L2 transaction by at most
+{h[head_mde_pct_placebo]:.1f}%. With demand this inelastic, Ethereum's mechanical blob price has worked mostly as
+a transfer: {w[fees_dencun_eth]:,.0f} ETH burned under the first regime, most of it as scarcity rent on full
+capacity, against allocative losses measured in single ETH where capacity was slack. For the design of blob
+pricing, this shifts the question from allocative efficiency to revenue, volatility and capacity. The one open
+empirical question is whether rollups' users respond where rollups do not.
+
+# Data availability
+
+The data are deposited at Harvard Dataverse, doi:10.7910/DVN/4AOXKT (version 2), under embargo pending
+publication [@dataverse]. The replication package regenerates every number, table and figure from the deposit with
+one command. Blob transaction data are indexed by Blobscan [@blobscan]. L2 fundamentals are from growthepie
+(CC BY 4.0) [@growthepie]. Mempool observations are from Xatu / ethPandaOps (CC BY 4.0) [@xatu]. The specification
+fixed before estimation (commit `65ae268`), the decision log and the specification curve are in the replication
+repository.
+
+# Appendix A. Verifying the blob schedule
+
+We recompute the excess blob gas of every block from its parent's excess, usage and base fee, applying the
+EIP-4844 rule through Pectra and the EIP-7918 rule from Fusaka. The parent's blob fee is priced with the child
+block's update fraction; the BPO1 activation block is consistent only with this convention. Table 6 reports the
+results for {x[n_blocks_checked]:,} blocks.
+
+{tbl[ta]}
+
+Each regime's own rule explains every block. Five reserve comparisons fall within 3 wei of equality and are not
+scored. The cross-rule columns show that the rules are distinguishable: the EIP-4844 rule mispredicts
+{fr[fusaka_share_mismatch_under_4844_rule]:.1%} of Fusaka blocks, and the EIP-7918 rule would have mispredicted
+{fr[dencun_share_mismatch_under_7918_rule]:.1%} of Dencun and {fr[pectra_share_mismatch_under_7918_rule]:.1%} of
+Pectra blocks. The reserve governed the update in {fr[fusaka_share_mismatch_under_4844_rule]:.1%} of Fusaka,
+{fr[bpo1_share_mismatch_under_4844_rule]:.1%} of BPO1 and {fr[bpo2_share_mismatch_under_4844_rule]:.1%} of BPO2
+blocks.
+
+# References

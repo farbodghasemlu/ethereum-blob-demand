@@ -248,3 +248,13 @@ environment). Upstream script 09 now refuses to overwrite a non-empty output dir
 available. Rollup-level migration between DA layers is therefore unobservable here; the paper says so in its
 limitations, names Celenium as the source that would provide it, and uses only growthepie's aggregate
 cross-layer series.
+
+**D-33 · Paper framing and presentation (2026-09-30).** (a) The welfare claim is stated regime by regime. The
+$14.8M of Dencun fees and the ≤2.6 ETH deadweight loss belong to different regimes: 67% of the fees were paid when
+capacity was full (usage 97% of target), where any market-clearing mechanism collects scarcity rents of similar
+size, and the 2.6 ETH bound applies to the post-Fusaka reserve when capacity was slack. Comparing the two directly
+would overstate the case. (b) The abstract reports the placebo-quantile interval and names the procedure; the wild
+bootstrap and clustered intervals are in Table 2. (c) The post-hoc pass-through analysis is labelled post hoc in
+the section heading and first paragraph and is kept out of the abstract. (d) Harberger (1964) is not cited because
+its bibliographic record could not be verified against Crossref; every other reference was verified. (e) The
+mempool counts are stated as matched (5.4M) and analysed (5.1M, first seen before inclusion).

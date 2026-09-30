@@ -111,6 +111,7 @@ print("\n".join(log))
 bs = by_state.set_index(["regime", "state"])
 save_numbers("06_mempool", {
     **{f"match_{r.regime}": r.match_rate for r in cov.itertuples()},
+    **{f"matched_{r.regime}": r.matched for r in cov.itertuples()},
     **{f"{rg}_{ {'floor': 'floor', 'above floor, previous block full': 'cong', 'above floor, previous block not full': 'interior'}[st]}_{k}": bs.loc[(rg, st), k] for rg, st in bs.index
        for k in ("n_txs", "share_first_opportunity", "share_waited_2plus", "mean_passed_over",
                  "share_passed_blocks_with_spare_capacity", "share_passed_blocks_priced_out",

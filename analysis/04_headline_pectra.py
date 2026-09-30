@@ -4,7 +4,7 @@ to co-primary; DECISIONS D-28), on the headline's 15 rollups and on all labelled
 Inference: placebo-date permutation and placebo-quantile (Conley-Taber) intervals (primary, PRESPEC 4), wild cluster
 restricted score bootstrap (D-29), CRV1 and two-way SEs. Minimum detectable effect (D-27). Also S2 Fusaka, S5 log price.
 
-Outputs: output/tables/t2_headline.{csv,md}, output/tables/placebo_pectra.csv,
+Outputs: output/tables/t2_main.{csv,md}, output/tables/placebo_pectra.csv,
          output/figures/fig2_placebo.{pdf,png}, output/logs/04_headline_pectra.md
 """
 import numpy as np
@@ -189,9 +189,6 @@ log.extend(["## Range of identifying variation (D-27)", "",
             f"({EV['share_days_above']:.1%} of days, {EV['share_fees_above']:.1%} of fees). SD of daily price: "
             f"{EV['sd_p_congested']:.3f} (2024-10-01..2025-05-06) vs {EV['sd_p_rest']:.4f} (rest of EIP-4844 regime).", ""])
 
-tab = pd.DataFrame([{"spec": "Headline (PRESPEC)", **H}, {"spec": "Levels 15 rollups", **L15}, {"spec": "S1 levels all", **S1}] +
-                   ([{"spec": "S2 Fusaka +-5d", **S2}] if S2 else []))
-tab.to_csv(TAB / "t2_headline.csv", index=False)
 (LOG / "04_headline_pectra.md").write_text("\n".join(log) + "\n")
 
 INK2, S1C = "#52514e", "#2a78d6"

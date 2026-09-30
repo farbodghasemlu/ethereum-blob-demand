@@ -3,4 +3,5 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 PY=.venv/bin/python
+mkdir -p output/logs
 for s in [0-9][0-9]_*.py; do echo "== $s"; $PY "$s" > "output/logs/${s%.py}.stdout.txt"; done

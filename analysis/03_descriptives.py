@@ -88,9 +88,9 @@ ax[2].set_ylabel("Share of blocks\nat 1-wei floor")
 ax[2].xaxis.set_major_locator(mdates.MonthLocator(bymonth=[1, 4, 7, 10]))
 ax[2].xaxis.set_major_formatter(mdates.DateFormatter("%b\n%Y"))
 ax[2].set_xlim(d.date.min(), d.date.max())
-fig.text(0.01, 0.005, "Unit: UTC day (N = %d). Shaded: EIP-7918 reserve-price regime (Fusaka onward). "
+fig.text(0.01, 0.005, "Unit: UTC day (N = %d). Shaded: EIP-7918 reserve-price regime (Fusaka onward).\n"
          "Blob base fee averaged over all blocks, incl. blocks without blobs." % len(d), fontsize=7, color=INK2)
-fig.tight_layout(rect=(0, 0.02, 0.97, 1))
+fig.tight_layout(rect=(0, 0.035, 0.97, 1))
 for ext in ("pdf", "png"):
     fig.savefig(FIG / f"fig1_market_timeseries.{ext}", dpi=200)
 print("wrote fig1")

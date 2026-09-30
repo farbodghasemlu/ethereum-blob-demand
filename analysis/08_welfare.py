@@ -132,7 +132,9 @@ save_numbers("08_welfare", {
     "reserve_days": int(dw.days.iloc[0]), "reserve_util": dw.mean_util_vs_target.iloc[0],
     "pectra_fee_pre_eth_day": cap.fees_eth_per_day.iloc[0], "pectra_fee_pre_usd_day": cap.fees_usd_per_day.iloc[0],
     "pectra_fee_post_eth_day": cap.fees_eth_per_day.iloc[1],
-    "cong_sd_p": sd_p, "cong_mean_p": cong.p.mean(), "l2_resid_sd": resid_sd, "implied_eta": resid_sd / sd_p,
+    "cong_sd_p": sd_p, "cong_mean_p": cong.p.mean(), "cong_util": cong.util.mean(),
+    "fees_cong_eth": dd.loc[["2024-Q4", "2025-Q1"], "fees_eth"].sum(), "fees_cong_usd_m": dd.loc[["2024-Q4", "2025-Q1"], "fees_usd"].sum() / 1e6,
+    "fees_2024q2_eth": dd.loc["2024-Q2", "fees_eth"], "fees_2024q1_eth": dd.loc["2024-Q1", "fees_eth"], "l2_resid_sd": resid_sd, "implied_eta": resid_sd / sd_p,
     "implied_shift_sd_ci": abs(ETA["headline, elastic end of reported (placebo) CI"]) * sd_p,
     "dwl_lev_eth": dw.loc["levels, elastic end of reported (placebo) CI", "dwl_eth"], "implied_shift_sd_p5": abs(ETA["spec curve DA-intensity p5"]) * sd_p,
 })
