@@ -45,7 +45,7 @@ log-price elasticity is not economically meaningful. We therefore use a schedule
 earlier, at a time when usage had been at target for months. The fee fell from {h[head_p_pre]:.2f} mETH per blob
 to the floor within a day.
 
-We fixed the specification in writing and committed it before estimating it (commit `65ae268` in the replication
+We fixed the specification in writing and committed it before estimating it (commit `811ab9b` in the replication
 repository), and we report every judgement call in a public decision log together with a specification curve.
 That specification named blobs per L2 transaction as the headline outcome. The data later showed that L2 activity
 itself responded to the fork, which makes that outcome a poor measure of the price response; we promoted the
@@ -454,7 +454,7 @@ The data are deposited at Harvard Dataverse, doi:10.7910/DVN/4AOXKT (version 2),
 publication [@dataverse]. The replication package regenerates every number, table and figure from the deposit with
 one command. Blob transaction data are indexed by Blobscan [@blobscan], with batcher labels from blob-list (CC0) [@bloblist]. L2 fundamentals are from growthepie
 (CC BY 4.0) [@growthepie]. Mempool observations are from Xatu / ethPandaOps (CC BY 4.0) [@xatu]. The specification
-fixed before estimation (commit `65ae268`), the decision log and the specification curve are in the replication
+fixed before estimation (commit `811ab9b`), the decision log and the specification curve are in the replication
 repository.
 
 # Appendix A. Verifying the blob schedule
