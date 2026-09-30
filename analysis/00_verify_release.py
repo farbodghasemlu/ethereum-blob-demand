@@ -1,7 +1,7 @@
 """00 — Verify the read-only deposit against MANIFEST-SHA256.txt before any analysis.
 Output: output/logs/00_verify_release.txt. Exits non-zero on any mismatch."""
 import hashlib, sys, platform
-from common import REL, LOG
+from common import REL, LOG, ETH_PRICES_CSV
 import duckdb, pandas, pyfixest
 
 lines, bad = [], 0
@@ -16,6 +16,9 @@ for row in (REL / "MANIFEST-SHA256.txt").read_text().splitlines():
     lines.append(f"{'OK  ' if ok else 'FAIL'} {name}")
 lines += ["", f"python {platform.python_version()}  duckdb {duckdb.__version__}  pandas {pandas.__version__}  pyfixest {pyfixest.__version__}",
           f"{len(lines) - bad} OK, {bad} FAILED"]
+if not ETH_PRICES_CSV.exists():
+    lines.append(f"MISSING {ETH_PRICES_CSV}: run `npm run prices` in the repository root (DECISIONS D-36)")
+    bad += 1
 (LOG / "00_verify_release.txt").write_text("\n".join(lines) + "\n")
 print("\n".join(lines))
 sys.exit(1 if bad else 0)

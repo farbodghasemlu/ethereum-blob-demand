@@ -4,7 +4,7 @@ every data problem that a later script has to handle.
 Outputs (output/tables/audit_*.csv, output/logs/01_data_audit.md). Aggregates only; nothing
 row-level is pulled into memory.
 """
-from common import BLOB_TXS, BLOCKS, ROLLUP_DAILY, DA_CROSS, PRICES, TAB, LOG, FORKS, con
+from common import BLOB_TXS, BLOCKS, ROLLUP_DAILY, DA_CROSS, ETH_CLOSE, TAB, LOG, FORKS, con
 
 c = con()
 md = ["# 01 — Data audit", ""]
@@ -84,7 +84,7 @@ save(df, "irregular_days", "Fork-transition and partial days",
      "Unit: UTC day. A full day has ~7,200 blocks. Days spanning two regimes need an explicit assignment rule.")
 
 # 7. USD price coverage.
-df = c.sql(f"""SELECT (SELECT max(date) FROM '{PRICES}' WHERE asset = 'ETH') AS eth_close_last_date,
+df = c.sql(f"""SELECT (SELECT max(date) FROM {ETH_CLOSE}) AS eth_close_last_date,
                       (SELECT max(date) FROM '{BLOCKS}') AS blocks_last_date,
                       count(*) FILTER (WHERE blob_fee_usd IS NULL AND date IS NOT NULL) AS rollup_days_missing_usd
                FROM '{ROLLUP_DAILY}'""").df()

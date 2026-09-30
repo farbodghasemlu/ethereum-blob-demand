@@ -15,10 +15,10 @@ Data-handling rules (all flagged, none silently applied to estimation samples):
   max(0.1%, 1 wei) in every regime, so the header series is valid post-Fusaka too.
 - USD uses the ETH daily close; it is NULL after the last available close (2026-09-23), never imputed.
 """
-from common import BLOB_TXS, BLOCKS, ROLLUP_DAILY, PRICES, GROWTHEPIE, DATA, LOG, GAS_PER_BLOB, PRICING_REGIME, con
+from common import BLOB_TXS, BLOCKS, ROLLUP_DAILY, ETH_CLOSE, GROWTHEPIE, DATA, LOG, GAS_PER_BLOB, PRICING_REGIME, con
 
 c = con()
-c.execute(f"CREATE TEMP TABLE eth AS SELECT date::DATE AS date, close AS eth_usd FROM '{PRICES}' WHERE asset = 'ETH'")
+c.execute(f"CREATE TEMP TABLE eth AS SELECT date, close AS eth_usd FROM {ETH_CLOSE}")
 c.execute("CREATE TEMP TABLE pr AS SELECT * FROM (VALUES " +
           ", ".join(f"('{k}', '{v}')" for k, v in PRICING_REGIME.items()) + ") t(regime, pricing_regime)")
 

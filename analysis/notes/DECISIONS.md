@@ -276,3 +276,14 @@ exceeds 1 in absolute value; 13% have the wrong sign, all with the 14-day window
 specification, 18.0% for all rollups and 24.0% for the intensity measure. It is reported beside, and kept distinct
 from, the largest increase not ruled out by the reported interval (40.1%, 36.2%, 11.6%), which is an interval
 bound, not a power statement.
+
+**D-36 · Exchange prices removed from the deposit; the analysis regenerates them.** The deposit carried
+`prices_daily.csv` (Binance daily klines, Coinbase fallback). Both exchanges' terms restrict redistribution of
+their market data, and the deposit's licence cannot cover third-party data it has no right to relicense. We drop
+the file from the published deposit; `npm run prices` (script 05) regenerates it in under a minute and the
+analysis reads the regenerated ETH closes (`common.ETH_CLOSE`). Alternative: keep the file and document the
+source terms. Rejected because documentation does not grant a right to redistribute. Check: the regenerated
+series matches the deposited one on 1,088 of 1,089 overlapping days; the exception is 2026-09-23, whose deposited
+close (2,760.63) was a partial day captured mid-day and whose regenerated close is 2,684.71. Regeneration also
+fills 24-28 September 2026. Effect on the paper: only USD figures from the reserve regime move (BPO2 fees
+$33,555 to $35,754; the largest deadweight-loss bound $8,032 to $8,039); no ETH figure and no estimate changes.

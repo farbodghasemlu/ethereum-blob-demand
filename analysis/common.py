@@ -15,7 +15,10 @@ def rel(name: str) -> str:
 
 BLOB_TXS, BLOCKS, ROLLUP_DAILY = rel("blob_txs.parquet"), rel("blocks_panel.parquet"), rel("rollup_daily.parquet")
 DA_CROSS, DA_LAYERS = rel("da_cross_daily.parquet"), rel("da_layers_daily.csv")
-GROWTHEPIE, PRICES = rel("growthepie_fundamentals.parquet"), rel("prices_daily.csv")
+GROWTHEPIE = rel("growthepie_fundamentals.parquet")
+# Exchange prices are not redistributed in the deposit (DECISIONS D-36); `npm run prices` (script 05) writes them here.
+ETH_PRICES_CSV = (ROOT / ".." / "data" / "raw" / "prices" / "ETH_daily.csv").resolve()
+ETH_CLOSE = f"(SELECT date::DATE AS date, close FROM read_csv('{ETH_PRICES_CSV}'))"
 
 GAS_PER_BLOB = 131_072          # blob gas per blob = 128 KiB of purchased capacity
 WEI_PER_ETH = 1e18

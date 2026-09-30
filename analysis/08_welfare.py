@@ -15,7 +15,7 @@ Outputs: output/tables/t3_welfare_*.csv, output/logs/08_welfare.md
 """
 import numpy as np
 import pandas as pd
-from common import BLOB_TXS, PRICES, GROWTHEPIE, DATA, TAB, LOG, GAS_PER_BLOB, con
+from common import BLOB_TXS, ETH_CLOSE, GROWTHEPIE, DATA, TAB, LOG, GAS_PER_BLOB, con
 
 c = con()
 d = pd.read_parquet(DATA / "day_panel.parquet")
@@ -44,7 +44,7 @@ SELECT regime, CASE WHEN regime = 'dencun' THEN strftime(date, '%Y') || '-Q' || 
        min(date) AS first_day, max(date) AS last_day, count(DISTINCT date) AS days, sum(blob_count) AS blobs,
        sum(blob_fee_wei) / 1e18 AS fees_eth, sum(blob_fee_wei / 1e18 * p.close) AS fees_usd,
        sum(blob_fee_wei) FILTER (WHERE p.close IS NULL) / 1e18 AS fees_eth_without_usd
-FROM '{BLOB_TXS}' t LEFT JOIN (SELECT date::DATE AS date, close FROM '{PRICES}' WHERE asset = 'ETH') p USING (date)
+FROM '{BLOB_TXS}' t LEFT JOIN {ETH_CLOSE} p USING (date)
 WHERE regime IS NOT NULL GROUP BY 1, 2 ORDER BY first_day""").df()
 tr["share_of_all_fees_eth"] = tr.fees_eth / tr.fees_eth.sum()
 tr["usd_per_blob"] = tr.fees_usd / tr.blobs

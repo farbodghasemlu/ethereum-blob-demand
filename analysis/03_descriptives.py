@@ -9,7 +9,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pandas as pd
-from common import BLOB_TXS, BLOCKS, PRICES, DATA, TAB, FIG, FORKS, GAS_PER_BLOB, PRICING_REGIME, con
+from common import BLOB_TXS, BLOCKS, ETH_CLOSE, DATA, TAB, FIG, FORKS, GAS_PER_BLOB, PRICING_REGIME, con
 
 c = con()
 blk = c.sql(f"""
@@ -33,7 +33,7 @@ SELECT t.regime, count(*) AS blob_txs, sum(blob_count) AS blobs,
        sum(blob_fee_wei) FILTER (WHERE p.close IS NULL) / 1e18 AS fee_eth_without_usd,
        avg(blob_count) AS blobs_per_tx,
        count(DISTINCT rollup) FILTER (WHERE rollup <> 'unknown') AS rollups_active
-FROM '{BLOB_TXS}' t LEFT JOIN (SELECT date::DATE AS date, close FROM '{PRICES}' WHERE asset = 'ETH') p USING (date)
+FROM '{BLOB_TXS}' t LEFT JOIN {ETH_CLOSE} p USING (date)
 WHERE t.regime IS NOT NULL GROUP BY 1""").df()
 t1 = blk.merge(tx, on="regime").sort_values("t0").drop(columns="t0")
 t1.insert(1, "pricing_regime", t1.regime.map(PRICING_REGIME))
