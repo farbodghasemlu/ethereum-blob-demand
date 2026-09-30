@@ -142,7 +142,7 @@ supply the fee state and blob usage of every block. Every blob-carrying transact
 [@blobscan]; rollup labels come from Blobscan and the blob-list registry [@bloblist], released under CC0. Daily L2 activity, including transaction counts and median transaction fees,
 comes from growthepie [@growthepie], published under CC BY 4.0. First mempool sightings of blob transactions for
 the Dencun and Pectra regimes come from the Xatu sensor network of ethPandaOps [@xatu], also CC BY 4.0. ETH/USD
-closes come from Binance, with Coinbase as fallback. The deposited dataset is described in Section 13.
+closes come from Binance, with Coinbase as fallback. The data availability statement at the end describes the deposit.
 
 Rollup labels leave {a[unk_blobs_ALL]:.1%} of blobs unattributed. The share is larger by other measures,
 {a[unk_tx_ALL]:.1%} of blob transactions and {a[unk_fees_ALL]:.1%} of fees, and it varies by regime from
@@ -450,8 +450,8 @@ pre-specified test on the next supply shock that arrives in a congested market w
 
 # Data availability
 
-The data are deposited at Harvard Dataverse, doi:10.7910/DVN/4AOXKT (version 2), under embargo pending
-publication [@dataverse]. The replication package regenerates every number, table and figure from the deposit with
+The data are published at Harvard Dataverse, doi:10.7910/DVN/4AOXKT, version 1.0, under a CC BY 4.0 licence
+[@dataverse]. Exchange price data are not redistributed; the pipeline's price script regenerates them. The replication package regenerates every number, table and figure from the deposit with
 one command. Blob transaction data are indexed by Blobscan [@blobscan], with batcher labels from blob-list (CC0) [@bloblist]. L2 fundamentals are from growthepie
 (CC BY 4.0) [@growthepie]. Mempool observations are from Xatu / ethPandaOps (CC BY 4.0) [@xatu]. The specification
 fixed before estimation (commit `811ab9b`), the decision log and the specification curve are in the replication

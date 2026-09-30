@@ -301,3 +301,13 @@ and Xatu / ethPandaOps (CC BY 4.0), and set the period to 2024-03-13 to 2026-09-
 records). We license the deposit CC BY 4.0. Alternative: keep CC0 and remove the CC BY inputs. Rejected because
 the mempool and growthepie files support Sections 8 and 11 and Table 1. The paper's author line and the citation
 metadata carry the author's ORCID (0009-0009-2303-5672).
+
+**D-38 · Deposit version 3 published as Dataverse version 1.0 (2026-09-30 15:20:01 UTC).** Before publishing we
+re-ran the merge so that the validation report no longer calls the fork values placeholders, and packaged a
+third bundle. Relative to version 2 it drops `prices_daily.csv` (D-36), refreshes the USD columns of
+`rollup_daily` and `da_cross_daily` for 2026-09-23 to 2026-09-28 (240 and 6 rows; every other column identical),
+writes `growthepie_fundamentals.parquet` in a fixed order (same content), and ships the pipeline documentation as
+README.md. The draft then matched the bundle file by file (18 files, server MD5), the metadata carried the
+corrections in D-37, and the full analysis re-run on the bundle rendered a byte-identical paper. Publishing
+required publishing the host collection first. The published dataset is CC BY 4.0 with 18 files; its public
+whole-dataset download verifies against MANIFEST-SHA256.txt.
