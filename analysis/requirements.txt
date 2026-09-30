@@ -6,3 +6,4 @@ pyarrow
 pyfixest
 statsmodels
 tabulate
+pypandoc_binary

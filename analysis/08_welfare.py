@@ -1,9 +1,10 @@
 """08 — Welfare accounting under the estimated demand (DECISIONS D-11, D-23).
 
 Demand is exponential in the blob price, Q(p) = A·exp(η p), p in mETH/blob, calibrated to each day's observed
-(p_t, Q_t). η is taken at several values because the point estimate is ~0: the elastic ends of the reported (placebo) intervals for the
-elastic side, the 5th percentile of the DA-intensity specification curve, and the median and 5th percentile of
-the total-demand specifications (confounded by the ETH rally, so upper bounds on responsiveness).
+(p_t, Q_t). η is taken at several values because the point estimate is ~0: the elastic ends of the reported
+(placebo) intervals for the headline and the levels specification, the 5th percentile of the DA-intensity
+specification curve, and the 5th percentile of the total-demand specifications (confounded by the ETH rally, so an
+upper bound on responsiveness).
 
 (a) Transfers: blob fees paid (burned) by regime and calendar quarter, ETH and USD.
 (b) Deadweight loss of the EIP-7918 reserve relative to zero-price allocation of slack capacity (usage < target on
