@@ -27,7 +27,9 @@ if(cfg.timePeriodStart||cfg.timePeriodEnd){const o={};if(cfg.timePeriodStart)o.t
 if(cfg.relatedPublication)fields.push(compound('publication',[{publicationCitation:prim('publicationCitation',cfg.relatedPublication)}]));
 if(cfg.relatedMaterial&&cfg.relatedMaterial.length)fields.push(primList('relatedMaterial',cfg.relatedMaterial));
 fields.push(prim('softwareVersion','blob-da-market-pipeline 1.0.0'));
-return{datasetVersion:{license:{name:cfg.license||'CC0 1.0',uri:(cfg.license||'CC0 1.0').startsWith('CC0')?'http://creativecommons.org/publicdomain/zero/1.0':'https://creativecommons.org/licenses/by/4.0/'},metadataBlocks:{citation:{displayName:'Citation Metadata',name:'citation',fields}}}};}
+// URIs as registered on Harvard Dataverse (GET /api/licenses)
+const LICENSE_URI={'CC0 1.0':'http://creativecommons.org/publicdomain/zero/1.0','CC BY 4.0':'http://creativecommons.org/licenses/by/4.0'};
+return{datasetVersion:{license:{name:cfg.license||'CC0 1.0',uri:LICENSE_URI[cfg.license||'CC0 1.0']},metadataBlocks:{citation:{displayName:'Citation Metadata',name:'citation',fields}}}};}
 function hashFile(file){return new Promise((res,rej)=>{const s256=crypto.createHash('sha256'),smd5=crypto.createHash('md5'),ssha1=crypto.createHash('sha1');const st=fs.createReadStream(file);st.on('error',rej);st.on('data',b=>{s256.update(b);smd5.update(b);ssha1.update(b);});st.on('end',()=>res({sha256:s256.digest('hex'),md5:smd5.digest('hex'),sha1:ssha1.digest('hex')}));});}
 async function describeFile(duck,file){const ext=path.extname(file).toLowerCase();let src=null;
 if(ext==='.parquet')src=`read_parquet('${file.replaceAll("'","''")}')`;

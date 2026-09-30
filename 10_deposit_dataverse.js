@@ -54,7 +54,7 @@ const doi=cp.state.doi;
 console.log('depositing',manifest.files.length,'files to',doi,'on',SERVER,DRY?'[dry-run]':'');
 const algo=DRY?null:await fixityAlgorithm();
 if(algo)console.log('server fixity algorithm:',algo);
-const existing=DRY?new Map():await listDraftFiles(doi);
+const existing=DRY&&!TOKEN?new Map():await listDraftFiles(doi);
 let added=0,replaced=0,skipped=0;
 for(const entry of manifest.files){const file=path.join(RELEASE,entry.name);
 if(!fs.existsSync(file)){console.log('missing locally, skipping:',entry.name);continue;}
@@ -73,6 +73,11 @@ catch(e){const msg=String(e.message||e);console.error('FAILED',entry.name,'-',ms
 if(/exceeds|too large|quota/i.test(msg))console.error('  hint: this installation caps file size (Harvard Dataverse is 2.5 GB); re-run 09 with a lower MAX_FILE_MB to split it');
 cp.state.lastError={file:entry.name,error:msg,at:new Date().toISOString()};cp.save();}
 await sleep(500);}
+if(process.env.PRUNE==='1'){const keep=new Set(manifest.files.map(f=>f.name));
+for(const[name,remote]of existing){if(keep.has(name))continue;
+if(DRY){console.log(`[dry-run] would delete ${name} from the draft (not in the bundle)`);continue;}
+try{await api('DELETE',`${SERVER}/api/files/${remote.id}`,{retries:2,timeout:120000});delete cp.state.uploaded[name];cp.save();console.log('deleted',name,'from the draft');}
+catch(e){console.error('FAILED to delete',name,'-',String(e.message||e).slice(0,300));}}}
 ensureDir('reports');
 saveJsonAtomic(path.join('reports','dataverse_deposit.json'),{server:SERVER,doi,landing_page:`${SERVER}/dataset.xhtml?persistentId=${doi}`,deposited_at:new Date().toISOString(),published:false,files:cp.state.uploaded,manifest_generated_at:manifest.generated_at});
 console.log(`done: ${added} uploaded, ${replaced} replaced, ${skipped} already current`);
