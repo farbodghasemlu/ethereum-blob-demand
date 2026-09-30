@@ -224,3 +224,13 @@ and 99% power against a 0.4 alternative. Base supplies 94.6% of the headline's s
 number of clusters is close to one. This is why CRV1 SEs are too small and why the placebo interval is reported.
 Alternatives: pairs cluster bootstrap (unreliable with few, unequal clusters); Webb six-point weights (not needed
 with full enumeration at G = 15).
+
+**D-30 · Blob schedule verified from the update rule, and a correction on the Fusaka boundary.** Script 01
+recomputes every block's excess_blob_gas from its parent: the EIP-4844 rule for Dencun and Pectra, the EIP-7918 rule
+from Fusaka (BLOB_BASE_COST = 2^13). The parent's blob fee is priced with the child block's update fraction; the BPO1
+activation block is consistent only with this convention (a client-implementation detail, not documented in the
+deposit). Result: 0 unexplained blocks in every regime among 6,650,443 checked; 5 reserve comparisons within 3 wei
+are left unscored. The reserve governs the update in 29.5% (Fusaka), 76.9% (BPO1) and 87.0% (BPO2) of blocks,
+reproducing the project notes. Correction: the notes said Fusaka's boundary rests only on the floor disappearing.
+The update rule separates the regimes: the EIP-4844 rule mispredicts 29.5% of Fusaka blocks and the EIP-7918 rule
+would mispredict 37.6% of Dencun and 46.1% of Pectra blocks. The boundary is as firmly identified as the others.

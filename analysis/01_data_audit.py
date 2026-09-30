@@ -110,3 +110,43 @@ pf_ = c.sql(f"""SELECT count(*) AS n, avg((abs(observed_blob_gas_price_wei - com
                        <= greatest(1e-3 * observed_blob_gas_price_wei, 1))::INT) AS agree FROM '{BLOB_TXS}' WHERE regime IS NOT NULL""").df()
 save_numbers("01_audit", {**{f"unk_{m}_{r}": u.loc[r, m] for r in u.index for m in ("tx", "blobs", "fees")},
                           "price_agree_share": pf_.agree[0], "n_blob_txs_dated": pf_.n[0]})
+
+# ---- Fork-rule verification (contribution: blob schedule verified from the protocol's update rule) ----------------
+# Each block's excess_blob_gas is recomputed from its parent with the block's own regime parameters.
+#   EIP-4844 (dencun, pectra): s = parent_excess + parent_used; excess = s < target_gas ? 0 : s - target_gas
+#   EIP-7918 (fusaka on): same zero branch; if BLOB_BASE_COST * parent_base_fee > GAS_PER_BLOB * parent_blob_fee the
+#   reserve binds and excess = parent_excess + parent_used * (max - target) // max; else s - target_gas.
+# parent_blob_fee is exp(parent_excess / update_fraction) with the CHILD block's update fraction: at a fork boundary
+# clients price the parent under the new schedule (the BPO1 activation block is only consistent with this).
+# Comparisons within 3 wei of equality are flagged as ties, not scored.
+c.execute(f"""
+CREATE TEMP TABLE fr AS
+WITH b0 AS (SELECT number, regime, target_blobs, max_blobs, update_fraction, excess_blob_gas AS ex,
+                   blob_gas_used AS used, base_fee_per_gas AS bf,
+                   lag(excess_blob_gas) OVER w AS p_ex, lag(blob_gas_used) OVER w AS p_used,
+                   lag(base_fee_per_gas) OVER w AS p_bf, lag(number) OVER w AS p_num
+            FROM '{BLOCKS}' WINDOW w AS (ORDER BY number)),
+b AS (SELECT *, CASE WHEN p_ex = 0 THEN 1.0 ELSE round(exp(p_ex::DOUBLE / update_fraction)) END AS p_fee FROM b0)
+SELECT *, target_blobs * 131072 AS tgt, p_ex + p_used AS s,
+       CASE WHEN p_ex + p_used < target_blobs * 131072 THEN 0 ELSE p_ex + p_used - target_blobs * 131072 END AS r4844,
+       8192.0 * p_bf > 131072.0 * p_fee AS reserve,
+       abs(8192.0 * p_bf - 131072.0 * p_fee) <= 131072.0 * 3 AS tie,
+       CASE WHEN p_ex + p_used < target_blobs * 131072 THEN 0
+            WHEN 8192.0 * p_bf > 131072.0 * p_fee THEN p_ex + (p_used * (max_blobs - target_blobs)) // max_blobs
+            ELSE p_ex + p_used - target_blobs * 131072 END AS r7918
+FROM b WHERE p_num = number - 1""")
+fr = c.sql("""
+SELECT regime, count(*) AS blocks_checked,
+       avg((ex <> CASE WHEN regime IN ('dencun','pectra') THEN r4844 ELSE r7918 END AND NOT tie)::INT) AS share_unexplained_own_rule,
+       avg(tie::INT) AS share_reserve_ties,
+       avg((ex <> r4844)::INT) AS share_mismatch_under_4844_rule,
+       avg((ex <> r7918 AND NOT tie)::INT) AS share_mismatch_under_7918_rule,
+       avg((reserve AND s >= tgt)::INT) AS share_reserve_governs_update,
+       min(number) AS first_block
+FROM fr GROUP BY 1 ORDER BY first_block""").df().drop(columns="first_block")
+save(fr, "fork_rules", "Excess-blob-gas update rule, recomputed block by block",
+     "Unit: block (with its parent in the panel). 'own rule' = EIP-4844 for dencun/pectra, EIP-7918 from fusaka. "
+     "The cross-rule columns show whether the update rule itself separates the regimes. Reserve ties = reserve "
+     "comparison within 3 wei, not scored.")
+save_numbers("01_forkrules", {f"{r.regime}_{k}": getattr(r, k) for r in fr.itertuples() for k in fr.columns if k != "regime"})
+(LOG / "01_data_audit.md").write_text("\n".join(md))
