@@ -172,7 +172,7 @@ update in {fr[bpo2_share_mismatch_under_4844_rule]:.0%} of BPO2 blocks.
 
 {tbl[t1]}
 
-![Blob market, daily, 13 March 2024 to 28 September 2026. Top: mean blob fee over all blocks (log scale). Middle: blobs per block against target and maximum. Bottom: share of blocks at the 1-wei floor. Shaded: reserve-price regime from Fusaka.](../output/figures/fig1_market_timeseries.png)
+![Blob market, daily, 13 March 2024 to 28 September 2026. Top: mean blob fee over all blocks (log scale). Middle: blobs per block against target and maximum. Bottom: share of blocks at the 1-wei floor. Shaded: reserve-price regime from Fusaka.](inputs/figures/fig1_market_timeseries.png)
 
 # 6. Identification and estimation
 
@@ -268,7 +268,7 @@ Blobs bought per L2 transaction changed by {x[head_pct]:.1f}% (column 3), with a
 moved with the treatment. It says where the rise in purchases came from: rollups bought more blobs because they
 carried more L2 transactions, and the capacity bought per transaction stayed the same.
 
-![Coefficients at 516 placebo break dates in the first two regimes, same estimator and window, for the primary outcome (left) and the per-transaction intensity (right). The vertical line is the Pectra estimate.](../output/figures/fig2_placebo.png)
+![Coefficients at 516 placebo break dates in the first two regimes, same estimator and window, for the primary outcome (left) and the per-transaction intensity (right). The vertical line is the Pectra estimate.](inputs/figures/fig2_placebo.png)
 
 **Specification curve.** Across {sc[prim_n_specs]} specifications of the primary outcome that vary the window,
 trends, the estimator, the price measure, day-of-week effects and zero-filling, the median elasticity at the
@@ -279,14 +279,14 @@ longer windows does. The primary estimate is less elastic than
 {sc[prim_pctile]:.0%} of the curve. The per-transaction curve (Appendix Figure 7) is centred near zero: its median
 elasticity is {sc[int_eps_median]:.3f}.
 
-![Specification curve for the semi-elasticity of blob purchases, primary outcome. Bars: 95% delta-method intervals from clustered errors. Lower panel: choices in each specification.](../output/figures/fig3_spec_curve.png)
+![Specification curve for the semi-elasticity of blob purchases, primary outcome. Bars: 95% delta-method intervals from clustered errors. Lower panel: choices in each specification.](inputs/figures/fig3_spec_curve.png)
 
 **Heterogeneity.** Estimated one rollup at a time, {sc[het_n_pos]} of {sc[het_n]} rollups increased their
 purchases; the equal-weighted mean is {sc[het_mean_beta]:.3f} log points and Base's is {sc[het_base_beta]:.3f}
 (Figure 4). For blobs per L2 transaction the per-rollup estimates split, {sc[het_int_n_pos]} positive, with an
 equal-weighted mean of {sc[het_int_mean_beta]:.3f}.
 
-![Coefficient on Post for blob purchases, estimated separately for each rollup, with 95% intervals. Dashed line: pooled estimate.](../output/figures/fig4_heterogeneity.png)
+![Coefficient on Post for blob purchases, estimated separately for each rollup, with 95% intervals. Dashed line: pooled estimate.](inputs/figures/fig4_heterogeneity.png)
 
 **A second source of evidence.** In the congested quarters the daily fee had a standard deviation of
 {w[cong_sd_p]:.2f} mETH per blob while usage stayed near target. If demand shifts were as volatile as detrended L2
@@ -331,7 +331,7 @@ one full block: usage arrives in bursts, and a block can fill even when the runn
 those cases is about one block, 12 seconds. Pricing out is a feature of congestion. In congested Dencun states
 {mp[dencun_cong_share_passed_blocks_priced_out]:.0%} of missed blocks priced the transaction out.
 
-![Cumulative share of blob transactions by blocks missed before inclusion, by the state when first seen. Source: Xatu / ethPandaOps, CC BY 4.0.](../output/figures/fig5_mempool.png)
+![Cumulative share of blob transactions by blocks missed before inclusion, by the state when first seen. Source: Xatu / ethPandaOps, CC BY 4.0.](inputs/figures/fig5_mempool.png)
 
 # 9. Welfare: transfer and allocative loss
 
@@ -408,7 +408,7 @@ of {pt[eta_activity_margin]:.2f} per mETH per blob is less elastic than values a
 accounting does not change. We do not treat this as a second finding. It is the open question with which the paper
 ends.
 
-![Change in median L2 fee and in L2 transactions, 28 days after against 28 days before Pectra, by chain. Post hoc. Source: growthepie, CC BY 4.0.](../output/figures/fig6_passthrough.png)
+![Change in median L2 fee and in L2 transactions, 28 days after against 28 days before Pectra, by chain. Post hoc. Source: growthepie, CC BY 4.0.](inputs/figures/fig6_passthrough.png)
 
 # 12. Limitations
 
@@ -466,7 +466,7 @@ results for {x[n_blocks_checked]:,} blocks.
 
 {tbl[ta]}
 
-![Specification curve for the semi-elasticity of blobs per L2 transaction (intensity margin). Bars: 95% delta-method intervals from clustered errors. Lower panel: choices in each specification.](../output/figures/figA1_spec_curve_intensity.png)
+![Specification curve for the semi-elasticity of blobs per L2 transaction (intensity margin). Bars: 95% delta-method intervals from clustered errors. Lower panel: choices in each specification.](inputs/figures/figA1_spec_curve_intensity.png)
 
 Each regime's own rule explains every block. Five reserve comparisons fall within 3 wei of equality and are not
 scored. The cross-rule columns show that the rules are distinguishable: the EIP-4844 rule mispredicts

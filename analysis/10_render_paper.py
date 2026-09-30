@@ -1,11 +1,38 @@
-"""10 — Render the paper: fills paper/draft_template.md with numbers from output/numbers/*.json and tables built
-from output/tables/*.csv. Output: paper/draft.md. Any placeholder without a number raises, so no number in the
-paper is typed by hand. Derived quantities (percent versions of log-point estimates) are computed here, not typed.
+"""10 — Render the paper: fills paper/draft_template.md with numbers and tables. Output: paper/draft.md.
+
+The paper reads only paper/inputs/ (numbers, tables, figures), which is tracked so that the paper builds from a
+clean clone. When the pipeline's outputs exist (output/numbers), they are copied into paper/inputs/ first, so a
+full ./run_all.sh always renders from fresh results. Any placeholder without a number raises, so no number in the
+paper is typed by hand. Derived quantities (percent versions of log-point estimates) are computed here.
 """
 import json
 import math
+import shutil
 import pandas as pd
-from common import ROOT, NUM, TAB
+from common import ROOT, NUM, TAB, FIG
+
+INPUTS = ROOT / "paper" / "inputs"
+NUMBER_FILES = ["01_audit", "01_forkrules", "03_descriptives", "04_headline", "05_spec_curve", "06_mempool",
+                "07_intraday", "08_welfare", "09_passthrough"]
+TABLE_FILES = ["table1_regimes", "t2_main", "t4_mempool_by_state", "t3_welfare_transfers", "t3_welfare_dwl",
+               "audit_fork_rules"]
+FIGURES = ["fig1_market_timeseries", "fig2_placebo", "fig3_spec_curve", "fig4_heterogeneity", "fig5_mempool",
+           "fig6_passthrough", "figA1_spec_curve_intensity"]
+
+if (NUM / "01_audit.json").exists():
+    for sub in ("numbers", "tables", "figures"):
+        (INPUTS / sub).mkdir(parents=True, exist_ok=True)
+    for f in NUMBER_FILES:
+        shutil.copy(NUM / f"{f}.json", INPUTS / "numbers" / f"{f}.json")
+    for f in TABLE_FILES:
+        shutil.copy(TAB / f"{f}.csv", INPUTS / "tables" / f"{f}.csv")
+    for f in FIGURES:
+        for ext in ("png", "pdf"):
+            shutil.copy(FIG / f"{f}.{ext}", INPUTS / "figures" / f"{f}.{ext}")
+    print("refreshed paper/inputs from output/")
+else:
+    print("output/ not present: rendering from the tracked paper/inputs")
+NUM, TAB = INPUTS / "numbers", INPUTS / "tables"
 
 SOURCES = {"a": "01_audit", "fr": "01_forkrules", "d": "03_descriptives", "h": "04_headline", "sc": "05_spec_curve",
            "mp": "06_mempool", "ix": "07_intraday", "w": "08_welfare", "pt": "09_passthrough"}

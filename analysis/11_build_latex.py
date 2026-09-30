@@ -1,8 +1,8 @@
 """11 — Build the arXiv LaTeX from paper/draft.md (rendered by 10).
 
 paper/arxiv/main.tex        pandoc conversion (natbib citations, abstract in the front matter, PDF figures)
-paper/arxiv/figures/*.pdf   figures from output/figures
-paper/arxiv/main.pdf        compiled with Tectonic if tools/tectonic exists (skipped with a message otherwise)
+paper/arxiv/figures/*.pdf   figures from paper/inputs/figures
+paper/arxiv/main.pdf        compiled with Tectonic (on PATH or in analysis/tools/; skipped with a message otherwise)
 paper/arxiv_submission.tar.gz  main.tex + main.bbl + references.bib + figures, the arXiv upload
 """
 import re
@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import tarfile
 import pypandoc
-from common import ROOT, FIG
+from common import ROOT
 
 PAPER = ROOT / "paper"
 OUT = PAPER / "arxiv"
@@ -23,9 +23,9 @@ front, body = md.split("\n---\n", 1)[0] + "\n", md.split("\n---\n", 1)[1]
 abstract = re.search(r"# Abstract\n\n(.*?)\n\n# ", body, re.S).group(1)
 body = body.replace(f"# Abstract\n\n{abstract}\n\n", "", 1)
 body = re.sub(r"\n# References\s*$", "\n", body)                       # natbib prints its own heading
-body = re.sub(r"\.\./output/figures/(\w+)\.png", r"figures/\1.pdf", body)
+body = re.sub(r"inputs/figures/(\w+)\.png", r"figures/\1.pdf", body)
 for f in re.findall(r"figures/(\w+)\.pdf", body):
-    shutil.copy(FIG / f"{f}.pdf", OUT / "figures" / f"{f}.pdf")
+    shutil.copy(PAPER / "inputs" / "figures" / f"{f}.pdf", OUT / "figures" / f"{f}.pdf")
 shutil.copy(PAPER / "references.bib", OUT / "references.bib")
 
 meta_abstract = "abstract: |\n" + "\n".join("  " + line for line in abstract.splitlines()) + "\n"
@@ -44,9 +44,9 @@ tex = pypandoc.convert_text(src, "latex", format="markdown", extra_args=["--stan
 (OUT / "main.tex").write_text(tex)
 print("wrote", OUT / "main.tex")
 
-tectonic = ROOT / "tools" / "tectonic"
-if not tectonic.exists():
-    print("tools/tectonic not found: main.tex written, PDF not compiled (see README)")
+tectonic = shutil.which("tectonic") or (ROOT / "tools" / "tectonic")
+if not (ROOT / "tools" / "tectonic").exists() and not shutil.which("tectonic"):
+    print("tectonic not found on PATH or in analysis/tools/: main.tex written, PDF not compiled (see README)")
 else:
     r = subprocess.run([str(tectonic), "--keep-intermediates", "--keep-logs", "main.tex"], cwd=OUT,
                        capture_output=True, text=True)

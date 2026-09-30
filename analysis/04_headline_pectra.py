@@ -38,7 +38,7 @@ def show(title, r, unit):
     print(f"\n== {title}\n" + "\n".join(log[-6:-1]))
 
 
-# ---- Headline ------------------------------------------------------------------------------------------
+# ---- Intensity specification (the PRESPEC headline; column 3 after D-34) -------------------------------
 H = event_estimate(panel, day, T_PECTRA, w=W)
 show("Headline (PRESPEC): PPML, offset ln(L2 txs), rollup FE + rollup linear trends + DOW, +-28 days", H,
      "rollup x day")
@@ -69,7 +69,7 @@ log.extend(["## Placebo-date permutation (primary inference)", "",
             f"- placebo pi (mETH/blob): mean {pl.pi.mean():.4f}, sd {pl.pi.std():.4f}", ""])
 print("\n".join(log[-7:]))
 
-# ---- Co-primary: unnormalized blob purchases (D-28) ------------------------------------------------------
+# ---- Primary: unnormalized blob purchases (D-28, D-34) ---------------------------------------------------
 L15 = event_estimate(panel, day, T_PECTRA, w=W, activity="none")          # same 15 rollups, no L2-activity term
 show("Levels, headline sample: PPML blobs, no normalization, rollup FE + trends + DOW", L15, "rollup x day")
 S1 = event_estimate(panel, day, T_PECTRA, w=W, activity="none_all")       # all labelled rollups active in window
