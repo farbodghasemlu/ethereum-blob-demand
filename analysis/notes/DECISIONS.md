@@ -258,3 +258,21 @@ bootstrap and clustered intervals are in Table 2. (c) The post-hoc pass-through 
 the section heading and first paragraph and is kept out of the abstract. (d) Harberger (1964) is not cited because
 its bibliographic record could not be verified against Crossref; every other reference was verified. (e) The
 mempool counts are stated as matched (5.4M) and analysed (5.1M, first seen before inclusion).
+
+**D-34 · The unnormalized specification becomes the primary estimate; PRESPEC revised for error.** The
+per-transaction outcome conditions on L2 transactions, and L2 activity itself rose at Pectra relative to chains
+that do not buy blobs (+0.28 log points, script 09). Its denominator therefore responds to treatment, and a
+reader of Section 11 would rightly call the headline contaminated by construction. We promote the unnormalized
+specification on the same 15 rollups (pre-listed as S1, estimated as specified) to primary: +0.211 log points,
+reported interval [0.080, 0.337], elasticity at the pre-shock price −0.19 with elastic bound −0.31. The intensity
+estimate stays in Table 2 as a descriptive measure of the per-transaction margin. The unnormalized estimate
+includes any L2 activity raised by the ETH rally, so it bounds the price response from above. Alternative:
+keep the intensity headline and treat levels as co-primary (D-28). Rejected because the bad-control problem is
+structural. Sensitivity: across 450 specifications of the primary outcome, no elasticity at the pre-shock price
+exceeds 1 in absolute value; 13% have the wrong sign, all with the 14-day window.
+
+**D-35 · Minimum detectable effect defined as a power calculation.** We report the minimum detectable effect as
+2.8 placebo standard deviations of the estimator (80% power, 5% two-sided test): 19.3% for the primary
+specification, 18.0% for all rollups and 24.0% for the intensity measure. It is reported beside, and kept distinct
+from, the largest increase not ruled out by the reported interval (40.1%, 36.2%, 11.6%), which is an interval
+bound, not a power statement.

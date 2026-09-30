@@ -1,16 +1,14 @@
 """08 — Welfare accounting under the estimated demand (DECISIONS D-11, D-23).
 
 Demand is exponential in the blob price, Q(p) = A·exp(η p), p in mETH/blob, calibrated to each day's observed
-(p_t, Q_t). η is taken at several values because the point estimate is ~0: the elastic ends of the reported
-(placebo) intervals for the headline and the levels specification, the 5th percentile of the DA-intensity
-specification curve, and the 5th percentile of the total-demand specifications (confounded by the ETH rally, so an
-upper bound on responsiveness).
+(p_t, Q_t). η is taken at the primary point estimate, the elastic ends of the reported (placebo) intervals for the
+primary and intensity specifications, and the 5th percentiles of both specification curves.
 
 (a) Transfers: blob fees paid (burned) by regime and calendar quarter, ETH and USD.
 (b) Deadweight loss of the EIP-7918 reserve relative to zero-price allocation of slack capacity (usage < target on
     those days): DWL_t = Q_t [ (1 - exp(-η p_t)) / η - p_t ]  (mETH), i.e. the Harberger triangle under exponential demand.
     The same formula for Dencun/Pectra floor days gives ~0 (p = 1 wei).
-(c) Pectra capacity shock: fees per day before/after within the headline window.
+(c) Pectra capacity shock: fees per day before/after within the main window.
 (d) Consistency: price volatility in the congested Dencun quarters implies a demand-shift SD of |η|·SD(p).
 
 Outputs: output/tables/t3_welfare_*.csv, output/logs/08_welfare.md
@@ -29,13 +27,13 @@ d["util"] = d.avg_blobs_per_block / d.target_blobs
 # η grid, read from the estimation outputs so the numbers stay in sync with scripts 04-05
 t2 = pd.read_csv(TAB / "t2_main.csv").set_index("spec")
 sc = pd.read_csv(TAB / "spec_curve.csv")
-HEAD, LEV = "(1) DA intensity [headline]", "(2) Levels, same 15 rollups"
+PRIM, INT = "(1) Blob purchases, 15 rollups [primary]", "(3) Blobs per L2 transaction [intensity]"
 ETA = {
-    "headline point (≈0; sign wrong)": min(t2.loc[HEAD, "eta"], 0.0),
-    "headline, elastic end of reported (placebo) CI": t2.loc[HEAD, "eta_placebo_lo"],
-    "levels, elastic end of reported (placebo) CI": t2.loc[LEV, "eta_placebo_lo"],
-    "spec curve DA-intensity p5": sc[sc.activity != "none"].eta.quantile(.05),
-    "total demand spec-curve p5 (confounded)": sc[sc.activity == "none"].eta.quantile(.05),
+    "primary, point estimate": t2.loc[PRIM, "eta"],
+    "primary, elastic end of reported interval": t2.loc[PRIM, "eta_placebo_lo"],
+    "intensity, elastic end of reported interval": t2.loc[INT, "eta_placebo_lo"],
+    "primary spec curve, 5th percentile": sc[sc.activity == "none"].eta.quantile(.05),
+    "intensity spec curve, 5th percentile": sc[sc.activity != "none"].eta.quantile(.05),
 }
 log = ["# 08 — Welfare accounting", "", "η values used (log points per mETH/blob):", ""] + \
       [f"- {k}: {v:.4f}" for k, v in ETA.items()] + [""]
@@ -127,14 +125,14 @@ save_numbers("08_welfare", {
     "fees_reserve_usd": tr[tr.regime.isin(["fusaka", "bpo1", "bpo2"])].fees_usd.sum(),
     "fees_cong_share_dencun": dd.loc[["2024-Q4", "2025-Q1"], "fees_eth"].sum() / tr[tr.regime == "dencun"].fees_eth.sum(),
     "fees_2024q3_eth": dd.loc["2024-Q3", "fees_eth"],
-    "dwl_max_eth": dw.dwl_eth.max(), "dwl_max_usd": dw.dwl_usd.max(), "dwl_ci_eth": dw.loc["headline, elastic end of reported (placebo) CI", "dwl_eth"],
-    "dwl_ci_usd": dw.loc["headline, elastic end of reported (placebo) CI", "dwl_usd"], "dwl_max_share": dw.dwl_as_share_of_fees.max(),
+    "dwl_max_eth": dw.dwl_eth.max(), "dwl_max_usd": dw.dwl_usd.max(), "dwl_ci_eth": dw.loc["primary, elastic end of reported interval", "dwl_eth"],
+    "dwl_ci_usd": dw.loc["primary, elastic end of reported interval", "dwl_usd"], "dwl_max_share": dw.dwl_as_share_of_fees.max(),
     "reserve_days": int(dw.days.iloc[0]), "reserve_util": dw.mean_util_vs_target.iloc[0],
     "pectra_fee_pre_eth_day": cap.fees_eth_per_day.iloc[0], "pectra_fee_pre_usd_day": cap.fees_usd_per_day.iloc[0],
     "pectra_fee_post_eth_day": cap.fees_eth_per_day.iloc[1],
     "cong_sd_p": sd_p, "cong_mean_p": cong.p.mean(), "cong_util": cong.util.mean(),
     "fees_cong_eth": dd.loc[["2024-Q4", "2025-Q1"], "fees_eth"].sum(), "fees_cong_usd_m": dd.loc[["2024-Q4", "2025-Q1"], "fees_usd"].sum() / 1e6,
     "fees_2024q2_eth": dd.loc["2024-Q2", "fees_eth"], "fees_2024q1_eth": dd.loc["2024-Q1", "fees_eth"], "l2_resid_sd": resid_sd, "implied_eta": resid_sd / sd_p,
-    "implied_shift_sd_ci": abs(ETA["headline, elastic end of reported (placebo) CI"]) * sd_p,
-    "dwl_lev_eth": dw.loc["levels, elastic end of reported (placebo) CI", "dwl_eth"], "implied_shift_sd_p5": abs(ETA["spec curve DA-intensity p5"]) * sd_p,
+    "implied_shift_sd_ci": abs(ETA["primary, elastic end of reported interval"]) * sd_p,
+    "dwl_point_eth": dw.loc["primary, point estimate", "dwl_eth"], "dwl_point_usd": dw.loc["primary, point estimate", "dwl_usd"], "implied_shift_sd_p5": abs(ETA["primary spec curve, 5th percentile"]) * sd_p,
 })

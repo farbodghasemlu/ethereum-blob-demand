@@ -15,6 +15,7 @@ pct = lambda x: 100 * (math.exp(x) - 1)
 vals["x"] = {
     "pinv": 1 / h["n_placebo"],
     **{f"{c}_pct": pct(h[f"{c}_beta"]) for c in ("head", "l15", "s1")},
+    "l15_ci_pct_lo": pct(h["l15_ci_placebo_lo"]), "l15_ci_pct_hi": pct(h["l15_ci_placebo_hi"]),
     **{f"{c}_{b}_pct": pct(h[f"{c}_ci_placebo_{b}"]) for c in ("head", "l15", "lall") for b in ("lo", "hi")},
     **{f"{c}_wild_{b}_pct": pct(h[f"{c}_ci_wild_{b}"]) for c in ("head", "l15") for b in ("lo", "hi")},
     "s2_usd": h["s2_p_post"] * h["s2_ethusd_pre"] / 1000,
@@ -62,20 +63,22 @@ T2 = pd.DataFrame({
     "95% CI, clustered": [ci(a, b) for a, b in zip(t2.ci_crv1_lo, t2.ci_crv1_hi)],
     "Placebo permutation p": t2.perm_p.map("{:.3f}".format),
     "Largest increase not ruled out": t2.mde_pct_placebo.map("{:.1f}%".format),
+    "Minimum detectable effect, 80% power": t2.mde80_pct.map("{:.1f}%".format),
     "Semi-elasticity (per mETH/blob)": t2.eta.map("{:.3f}".format),
     "Elasticity at pre-shock price, elastic bound": t2.eps_placebo_lo.map("{:.2f}".format),
     "Log-price coefficient (floor-dependent)": t2.log_price_elasticity.map("{:.4f}".format),
     "N (rollup-days)": t2.n_obs.map("{:,}".format),
     "Rollups": t2.n_rollups.map(str),
 }).T.reset_index()
-T2.columns = ["", "(1) Blobs per L2 tx", "(2) Blobs, same rollups", "(3) Blobs, all rollups"]
+T2.columns = ["", "(1) Blobs bought, 15 rollups (primary)", "(2) Blobs bought, all rollups", "(3) Blobs per L2 tx (intensity)"]
 T2_md = md_table(T2, "Pectra supply shock, 28 days either side of 7 May 2025, fork day excluded. PPML with rollup "
-                 "fixed effects, rollup-specific linear trends and day-of-week effects. Column 1 includes log L2 "
-                 "transactions as an offset. First stage: the mean blob fee fell by "
+                 "fixed effects, rollup-specific linear trends and day-of-week effects. Column 3 includes log L2 "
+                 "transactions as an offset; its denominator responds to the treatment (Section 11), so it describes "
+                 "the intensity margin and is not the primary estimate. First stage: the mean blob fee fell by "
                  f"{abs(h['head_pi']):.2f} mETH per blob (Newey-West SE {h['head_se_pi']:.2f}). Reported interval: "
                  f"quantiles of the same estimator at {h['n_placebo']} placebo break dates. Wild bootstrap: restricted "
-                 "score bootstrap, Rademacher weights, all 32,768 sign vectors in columns 1 and 2, 99,999 draws in "
-                 "column 3. The elasticity bound is the elastic end of the reported interval divided by the first "
+                 "score bootstrap, Rademacher weights, all 32,768 sign vectors in columns 1 and 3, 99,999 draws in "
+                 "column 2. Minimum detectable effect: 2.8 placebo standard deviations (80% power, 5% test). The elasticity bound is the elastic end of the reported interval divided by the first "
                  "stage, times the pre-shock price.", "tbl:main")
 
 # Table 3: mempool
@@ -98,11 +101,11 @@ T4a = pd.DataFrame({"Period": tr.period, "Days": tr.days, "Blobs": tr.blobs.map(
 T4a_md = md_table(T4a, "Blob fees by period, with Dencun split by calendar quarter. Fees are burned, a transfer from "
                   "rollups to ETH holders.", "tbl:transfers")
 dw = pd.read_csv(TAB / "t3_welfare_dwl.csv")
-DWL_LABEL = {"headline point (≈0; sign wrong)": "Headline point estimate (wrong sign, set to zero)",
-             "headline, elastic end of reported (placebo) CI": "Headline, elastic end of reported interval",
-             "levels, elastic end of reported (placebo) CI": "Levels, elastic end of reported interval",
-             "spec curve DA-intensity p5": "Specification curve, 5th percentile",
-             "total demand spec-curve p5 (confounded)": "Total-demand specifications, 5th percentile (confounded)"}
+DWL_LABEL = {"primary, point estimate": "Primary specification, point estimate",
+             "primary, elastic end of reported interval": "Primary specification, elastic end of reported interval",
+             "intensity, elastic end of reported interval": "Intensity specification, elastic end of reported interval",
+             "primary spec curve, 5th percentile": "Primary specification curve, 5th percentile",
+             "intensity spec curve, 5th percentile": "Intensity specification curve, 5th percentile"}
 T4b = pd.DataFrame({"Demand assumption": dw.eta_label.map(DWL_LABEL), "Semi-elasticity (per mETH/blob)": dw.eta.map("{:.3f}".format),
                     "Deadweight loss (ETH)": dw.dwl_eth.map("{:.3f}".format), "Deadweight loss (USD)": dw.dwl_usd.map("{:,.0f}".format),
                     "Share of fees": dw.dwl_as_share_of_fees.map("{:.1%}".format)})

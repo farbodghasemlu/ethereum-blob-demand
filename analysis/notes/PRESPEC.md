@@ -101,3 +101,15 @@ The headline equation is re-estimated over all combinations of:
 The sample rule is re-applied for each window. The distribution of η is plotted, and the share of
 specifications with η < 0 and with η significant at 5% is reported. If the headline sits in a corner of this
 distribution, the paper says so.
+
+---
+
+## Revision, 30 September 2026 (recorded after estimation; the text above is unchanged)
+
+The primary estimate is now the unnormalized specification (pre-listed above as S1, estimated on the same 15
+rollups), and blobs per L2 transaction is reported as a descriptive intensity measure. Reason: the headline's
+premise that L2 activity is unaffected by the blob price turned out to be wrong (DECISIONS D-24). L2 activity rose
+at Pectra relative to chains that do not buy blobs (script 09), so the offset normalizes by a variable that responds
+to treatment. That is an error in the specification, which the rules above allow us to correct; the correction is
+recorded in DECISIONS D-34. Equation, sample, window, fixed effects, trends, first stage and inference are
+unchanged; only the offset is dropped.

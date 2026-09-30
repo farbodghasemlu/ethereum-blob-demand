@@ -113,6 +113,19 @@ def wild_score_test(d, beta0, trend="linear", offset=True, dow=True, draws=None,
     return float((np.abs(t_star) >= abs(t_obs) - 1e-12).mean())
 
 
+def score_shares(d, trend="linear", offset=True, dow=True):
+    """Share of each cluster in the variance of the restricted score at beta = 0 (how few the effective clusters are)."""
+    d = d.copy()
+    d["off0"] = d.lT if offset else 0.0
+    ctrl = _rhs_controls(trend, dow)
+    rhs = " + ".join(ctrl) if ctrl else "1"
+    mr = pf.fepois(f"n_blobs ~ {rhs} | rollup", data=d, offset="off0", vcov="iid")
+    d["wt"] = np.asarray(mr.predict(type="response"), dtype=float)
+    xt = np.asarray(pf.feols(f"post ~ {rhs} | rollup", data=d, weights="wt").resid(), dtype=float)
+    S = pd.Series(xt * (d.n_blobs.to_numpy(dtype=float) - d.wt.to_numpy())).groupby(d.rollup.to_numpy()).sum()
+    return (S ** 2 / (S ** 2).sum()).sort_values(ascending=False)
+
+
 def wild_ci(d, beta_hat, trend="linear", offset=True, dow=True, half_width=0.5, step=0.0025, level=0.95):
     """Bootstrap confidence set by test inversion over a grid around beta_hat: all beta0 with p >= 1 - level."""
     grid = np.arange(beta_hat - half_width, beta_hat + half_width + step / 2, step)

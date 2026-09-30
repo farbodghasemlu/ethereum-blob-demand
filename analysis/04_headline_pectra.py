@@ -1,8 +1,10 @@
 """04 — Main estimates: Pectra supply shock.
-Column 1: DA-intensity semi-elasticity (PRESPEC headline). Columns 2-3: unnormalized blob purchases (PRESPEC S1, promoted
-to co-primary; DECISIONS D-28), on the headline's 15 rollups and on all labelled rollups.
-Inference: placebo-date permutation and placebo-quantile (Conley-Taber) intervals (primary, PRESPEC 4), wild cluster
-restricted score bootstrap (D-29), CRV1 and two-way SEs. Minimum detectable effect (D-27). Also S2 Fusaka, S5 log price.
+Column 1 (primary, DECISIONS D-34): unnormalized blob purchases of the 15 rollups with L2 activity data. Column 2: the
+same on all labelled rollups. Column 3: blobs per L2 transaction, the intensity margin named as the headline in
+PRESPEC; its denominator responds to the treatment, so it is reported as a descriptive intensity measure.
+Inference: placebo-date permutation and placebo-quantile (Conley-Taber) intervals (reported, PRESPEC 4), wild cluster
+restricted score bootstrap (D-29), clustered and two-way SEs. Minimum detectable effect at 80% power from the placebo
+distribution (D-35); largest increase not ruled out (D-27). Also S2 Fusaka and S5 log price.
 
 Outputs: output/tables/t2_main.{csv,md}, output/tables/placebo_pectra.csv,
          output/figures/fig2_placebo.{pdf,png}, output/logs/04_headline_pectra.md
@@ -124,9 +126,9 @@ def ct_interval(beta, placebo):
     """Invert the placebo distribution of estimation error: beta - q97.5 .. beta - q2.5 (Conley and Taber 2011)."""
     q_lo, q_hi = np.quantile(placebo, [0.025, 0.975])
     return beta - q_hi, beta - q_lo
-cols3 = {"(1) DA intensity [headline]": (H, pl.beta.to_numpy(), dict(offset=True), True),
-         "(2) Levels, same 15 rollups": (L15, pl15, dict(offset=False), True),
-         "(3) Levels, all labelled rollups": (S1, pl1, dict(offset=False), False)}
+cols3 = {"(1) Blob purchases, 15 rollups [primary]": (L15, pl15, dict(offset=False), True),
+         "(2) Blob purchases, all labelled rollups": (S1, pl1, dict(offset=False), False),
+         "(3) Blobs per L2 transaction [intensity]": (H, pl.beta.to_numpy(), dict(offset=True), True)}
 rows_t = []
 for name, (r, plc, kw, txreq) in cols3.items():
     dd = window_sample(panel, T_PECTRA, W, require_txcount=txreq)
@@ -137,13 +139,22 @@ for name, (r, plc, kw, txreq) in cols3.items():
     rows_t.append(dict(spec=name, beta=r["beta"], se_crv1=r["se_beta_rollup"], se_twoway=r["se_beta_twoway"],
                        ci_crv1_lo=r["beta"] - 1.96 * r["se_beta_rollup"], ci_crv1_hi=r["beta"] + 1.96 * r["se_beta_rollup"],
                        ci_wild_lo=w_lo, ci_wild_hi=w_hi, ci_placebo_lo=c_lo, ci_placebo_hi=c_hi, perm_p=perm_p,
+                       placebo_sd=np.std(plc, ddof=1),
                        n_placebo=len(plc), pi=r["pi"], se_pi=r["se_pi"], eta=r["eta"],
                        eta_placebo_lo=c_hi / r["pi"], eta_placebo_hi=c_lo / r["pi"],
                        eps_pre=r["eps_at_pre_mean"], eps_placebo_lo=c_hi / r["pi"] * r["p_pre"],
                        eps_placebo_hi=c_lo / r["pi"] * r["p_pre"], log_price_elasticity=r["beta"] / dlp,
                        n_obs=r["n_obs"], n_rollups=r["n_rollups"], n_days=r["n_days"], p_pre=r["p_pre"], p_post=r["p_post"]))
 T2 = pd.DataFrame(rows_t)
+from est import score_shares
+_sh = {name: score_shares(window_sample(panel, T_PECTRA, W, require_txcount=txreq), offset=kw["offset"])
+       for name, (r, plc, kw, txreq) in cols3.items()}
+T2["top_cluster"] = [_sh[n].index[0] for n in T2.spec]
+T2["top_cluster_score_share"] = [_sh[n].iloc[0] for n in T2.spec]
 T2["mde_pct_placebo"] = 100 * (np.exp(T2.ci_placebo_hi) - 1)     # largest increase in blobs not ruled out
+# minimum detectable effect: 80% power, 5% two-sided test, placebo SD as the standard error of the design
+T2["mde80_logpts"] = (1.96 + 0.8416) * T2.placebo_sd
+T2["mde80_pct"] = 100 * (np.exp(T2.mde80_logpts) - 1)
 T2["mde_pct_wild"] = 100 * (np.exp(T2.ci_wild_hi) - 1)
 T2["mde_pct_crv1"] = 100 * (np.exp(T2.ci_crv1_hi) - 1)
 T2.to_csv(TAB / "t2_main.csv", index=False)
@@ -160,15 +171,16 @@ view = pd.DataFrame({
     "eta = beta/pi (per mETH/blob)": T2.eta.map("{:.3f}".format).to_numpy(),
     "elasticity at pre-shock price": T2.eps_pre.map("{:.3f}".format).to_numpy(),
     "largest increase not ruled out (placebo CI)": T2.mde_pct_placebo.map("{:.1f}%".format).to_numpy(),
+    "minimum detectable effect, 80% power": T2.mde80_pct.map("{:.1f}%".format).to_numpy(),
     "log-price elasticity (floor-dependent, D-10)": T2.log_price_elasticity.map("{:.4f}".format).to_numpy(),
     "N (rollup-days)": T2.n_obs.map("{:,}".format).to_numpy(), "rollups": T2.n_rollups.to_numpy(), "days": T2.n_days.to_numpy()},
     index=T2.spec).T
 (TAB / "t2_main.md").write_text(
     "Table 2. Pectra supply shock, 2025-04-09 to 2025-06-04 (fork day excluded). Unit: rollup x day. PPML with rollup FE, "
-    "rollup-specific linear trends, day-of-week FE. Column 1 adds ln(L2 transactions) as an offset (blobs per L2 "
+    "rollup-specific linear trends, day-of-week FE. Column 3 adds ln(L2 transactions) as an offset (blobs per L2 "
     "transaction). Reported interval: placebo quantiles (Conley and Taber 2011) from the same estimator at every placebo "
     "break date in the EIP-4844 regime. Wild bootstrap: restricted score bootstrap (Kline and Santos 2012), Rademacher "
-    "weights, clusters = rollups (all 2^15 sign vectors in columns 1-2; 99,999 draws in column 3). Price in mETH per blob "
+    "weights, clusters = rollups (all 2^15 sign vectors in columns 1 and 3; 99,999 draws in column 2). Price in mETH per blob "
     "(1 blob = 131,072 blob gas).\n\n" + view.to_markdown() + "\n")
 log.extend(["## Main table", "", view.to_markdown(), ""])
 
@@ -192,24 +204,26 @@ log.extend(["## Range of identifying variation (D-27)", "",
 (LOG / "04_headline_pectra.md").write_text("\n".join(log) + "\n")
 
 INK2, S1C = "#52514e", "#2a78d6"
-fig, ax = plt.subplots(figsize=(6.4, 3.2))
-ax.hist(pl.beta, bins=40, color=S1C, alpha=0.85, edgecolor="white", linewidth=0.6)
-ax.axvline(H["beta"], color="#0b0b0b", lw=1.4)
-ax.text(H["beta"], ax.get_ylim()[1] * 0.95, f"  Pectra  β = {H['beta']:.3f}\n  permutation p = {p_beta:.3f}",
-        va="top", fontsize=8, color="#0b0b0b")
-ax.set_xlabel("β (PPML coefficient on Post, log points)", color=INK2)
-ax.set_ylabel("placebo dates", color=INK2)
-for sp in ("top", "right"):
-    ax.spines[sp].set_visible(False)
+fig, axs = plt.subplots(1, 2, figsize=(7.2, 3.0))
+for ax, (plc, b, title) in zip(axs, [(pl15, L15["beta"], "Blob purchases (primary)"),
+                                     (pl.beta.to_numpy(), H["beta"], "Blobs per L2 transaction")]):
+    ax.hist(plc, bins=40, color=S1C, alpha=0.85, edgecolor="white", linewidth=0.6)
+    ax.axvline(b, color="#0b0b0b", lw=1.4)
+    ax.text(b, ax.get_ylim()[1] * 0.95, f" Pectra\n β = {b:.3f}", va="top", fontsize=7.5, color="#0b0b0b")
+    ax.set_title(title, fontsize=8.5, color=INK2)
+    ax.set_xlabel("β (PPML coefficient on Post, log points)", color=INK2, fontsize=8)
+    for sp in ("top", "right"):
+        ax.spines[sp].set_visible(False)
+axs[0].set_ylabel("placebo dates", color=INK2)
 fig.text(0.01, 0.01, f"{len(pl)} placebo break dates in the EIP-4844 regime, identical estimator and ±{W}-day window.",
          fontsize=7, color=INK2)
-fig.tight_layout(rect=(0, 0.04, 1, 1))
+fig.tight_layout(rect=(0, 0.05, 1, 1))
 for ext in ("pdf", "png"):
     fig.savefig(FIG / f"fig2_placebo.{ext}", dpi=200)
 print("done")
 
 from common import save_numbers
-t2 = T2.set_index(pd.Index(["head", "l15", "lall"]))
+t2 = T2.set_index(pd.Index(["l15", "lall", "head"]))
 save_numbers("04_headline", {
     **{f"head_{k}": v for k, v in H.items() if k != "rollups"},
     **{f"l15_{k}": v for k, v in L15.items() if k != "rollups"},
@@ -217,6 +231,7 @@ save_numbers("04_headline", {
     **{f"{i}_{k}": t2.loc[i, k] for i in t2.index for k in t2.columns if k != "spec"},
     "head_usd_pre": H["p_pre"] * H["ethusd_pre"] / 1000,
     "perm_p_beta": p_beta, "perm_p_eta": p_eta, "n_placebo": len(pl), "placebo_sd_beta": pl.beta.std(),
+    "placebo_sd_l15": np.std(pl15, ddof=1),
     "placebo_lo": str(pl.tau.min()), "placebo_hi": str(pl.tau.max()),
     "s1_perm_p": p_beta_s1, "l15_perm_p": p_beta_l15, "s1b_beta": S1b["beta"], "unk_share_window": unk_share,
     **({f"s2_{k}": v for k, v in S2.items() if k != "rollups"} if S2 else {}),

@@ -10,19 +10,19 @@ bibliography: references.bib
 Ethereum sells data-availability capacity to rollups through "blobs" priced by a controller: the blob fee rises
 and falls exponentially with cumulative usage above or below a target, and no auction sets it. We measure what
 this mechanical price costs. The Pectra upgrade of 7 May 2025 doubled blob capacity on a date fixed weeks in
-advance, while the market was congested, and the blob fee fell from {h[head_p_pre]:.2f} mETH per blob (about
-${h[head_usd_pre]:.2f}) to its 1-wei floor. Blobs purchased per L2 transaction changed by {x[head_pct]:.1f}%. The
-95% interval, built from the same estimator at {h[n_placebo]} placebo dates, runs from {x[head_lo_pct]:.1f}% to
-{x[head_hi_pct]:+.1f}%, so we can rule out increases larger than {h[head_mde_pct_placebo]:.1f}% in response to
-removing the entire price. That bounds the elasticity at the pre-shock price at {h[head_eps_placebo_lo]:.2f}.
-Unnormalized blob purchases rose {x[l15_pct]:.0f}%, which bounds the total response, including any rise in L2
-activity, at an elasticity of {h[l15_eps_placebo_lo]:.2f}. With demand this inelastic, the controller works mainly
-as a transfer. Rollups paid ${w[fees_dencun_usd_m]:.1f} million in blob fees under the first blob regime,
-{w[fees_cong_share_dencun]:.0%} of it in two quarters when capacity was full and any market-clearing mechanism would
-have collected comparable scarcity rents. Where capacity was slack, the reserve price introduced in December 2025
-cost at most {w[dwl_max_eth]:.1f} ETH (${w[dwl_max_usd]:,.0f}) in deadweight loss under the most elastic demand the
-data allow. Mempool records for {x[n_matched]:.1f} million blob transactions show that when the fee sits at its
-floor, capacity is slack: transactions miss about one block and are almost never priced out.
+advance, while the market was congested, and the blob fee fell from {h[l15_p_pre]:.2f} mETH per blob (about
+${h[head_usd_pre]:.2f}) to its 1-wei floor. Rollups' blob purchases rose {x[l15_pct]:.0f}%. The 95% interval, built
+from the same estimator at {h[n_placebo]} placebo dates, runs from {x[l15_ci_pct_lo]:.0f}% to
+{x[l15_ci_pct_hi]:.0f}%, so removing the entire price raised purchases by at most {h[l15_mde_pct_placebo]:.0f}%.
+The implied elasticity at the pre-shock price is {h[l15_eps_pre]:.2f}, and no value below
+{h[l15_eps_placebo_lo]:.2f} is consistent with the interval. The estimate includes any rise in L2 activity
+that coincided with the fork, so it bounds the price response from above. With demand this inelastic, the
+controller works mainly as a transfer. Rollups paid ${w[fees_dencun_usd_m]:.1f} million in blob fees under the first
+blob regime, {w[fees_cong_share_dencun]:.0%} of it in two quarters when capacity was full and any market-clearing
+mechanism would have collected comparable scarcity rents. Where capacity was slack, the reserve price introduced in
+December 2025 cost at most {w[dwl_max_eth]:.1f} ETH (${w[dwl_max_usd]:,.0f}) in deadweight loss under the most
+elastic demand the data allow. Mempool records for {x[n_matched]:.1f} million blob transactions show that when the
+fee sits at its floor, capacity is slack: transactions miss about one block and are almost never priced out.
 
 # 1. Introduction
 
@@ -47,15 +47,19 @@ to the floor within a day.
 
 We fixed the specification in writing and committed it before estimating it (commit `65ae268` in the replication
 repository), and we report every judgement call in a public decision log together with a specification curve.
+That specification named blobs per L2 transaction as the headline outcome. The data later showed that L2 activity
+itself responded to the fork, which makes that outcome a poor measure of the price response; we promoted the
+unnormalized specification, listed in the same document, to primary and recorded the revision and its reason
+alongside the original text (Section 6.2).
 
 The paper makes five contributions.
 
-**1. A bound on the demand elasticity at the rollups' own margin.** When the price of a blob fell from about
-${h[head_usd_pre]:.2f} to zero, rollups did not buy more capacity per L2 transaction. We can rule out increases
-larger than {h[head_mde_pct_placebo]:.1f}%, which bounds the elasticity at the pre-shock price at
-{h[head_eps_placebo_lo]:.2f}. Unnormalized purchases rose {x[l15_pct]:.0f}%, an upper bound on the total response
-that still implies an elasticity no larger than {h[l15_eps_placebo_lo]:.2f} in absolute value. A price cut of
-100% leaves little room for the objection that the sample lacks variation.
+**1. A bound on the demand elasticity for blob capacity.** When the price of a blob fell from about
+${h[head_usd_pre]:.2f} to zero, rollups' blob purchases rose {x[l15_pct]:.0f}%, and the reported interval rules out
+increases larger than {h[l15_mde_pct_placebo]:.0f}%. The elasticity at the pre-shock price is {h[l15_eps_pre]:.2f},
+with an elastic bound of {h[l15_eps_placebo_lo]:.2f}. Blobs bought per L2 transaction did not change
+({x[head_pct]:.1f}%), so the rise came through L2 activity. A price cut of 100% leaves little room for the
+objection that the sample lacks variation.
 
 **2. A welfare decomposition that separates transfers from allocative loss.** Rollups paid
 {w[fees_dencun_eth]:,.0f} ETH (${w[fees_dencun_usd_m]:.1f} million) in blob fees under the first regime.
@@ -192,15 +196,24 @@ its first and last post, and $T_{{it}}$ its L2 transactions. We estimate by Pois
 $$E[B_{{it}}] = T_{{it}}^{{\,k}} \exp(\alpha_i + \gamma_i t + \delta_{{w(t)}} + \beta\, \mathrm{{Post}}_t),$$
 
 with rollup fixed effects $\alpha_i$, rollup-specific linear trends $\gamma_i t$ and day-of-week effects
-$\delta_{{w(t)}}$, over 28 days either side of the fork. In the specification we fixed before estimation, $k = 1$:
-L2 transactions enter as an offset and the outcome is blobs per L2 transaction. We chose it because ETH rose 22% the
-day after Pectra, which plausibly raised L2 activity at the moment the fee fell. The unnormalized specification sets
-$k = 0$ and measures blob purchases directly; we report it alongside as co-primary. The semi-elasticity is
-$\eta = \beta/\pi$, where $\pi$ is the first stage, in log points per mETH per blob, and the elasticity at the
-pre-shock price $\bar p$ is $\eta \bar p$.
+$\delta_{{w(t)}}$, over 28 days either side of the fork. The primary specification sets $k = 0$: the outcome is blob
+purchases of the {h[l15_n_rollups]} rollups for which daily L2 transaction counts exist. We also report it for all
+{h[s1_n_rollups]} labelled rollups.
 
-We measure the price in mETH per blob. A log-price coefficient identified off a move to the floor depends on where
-the floor happens to be: the same $\hat\beta$ gives {h[s5_elast_floor_1]:.4f} with the actual 1-wei floor and
+The specification we committed before estimation set $k = 1$, entering L2 transactions as an offset so that the
+outcome is blobs per L2 transaction. We chose it because ETH rose 22% the day after Pectra, which plausibly raised
+L2 activity at the moment the fee fell, and we assumed that blob costs were too small to move L2 activity
+themselves. That assumption failed (Section 11): L2 activity on blob-buying chains rose relative to chains that do
+not buy blobs, so the denominator responds to the treatment. We therefore report the per-transaction outcome as a
+descriptive measure of the intensity margin and use $k = 0$ for inference about demand. Everything else in the
+specification is as committed. The cost of the change is that the primary estimate also contains any L2 activity
+raised by the ETH rally, which biases it toward a larger response; we read it as an upper bound on the price
+response.
+
+The semi-elasticity is $\eta = \beta/\pi$, where $\pi$ is the first stage, in log points per mETH per blob, and
+the elasticity at the pre-shock price $\bar p$ is $\eta \bar p$. We measure the price in mETH per blob. A
+log-price coefficient identified off a move to the floor depends on where the floor happens to be: for the
+intensity outcome the same $\hat\beta$ gives {h[s5_elast_floor_1]:.4f} with the actual 1-wei floor and
 {h[s5_elast_floor_1000000]:.4f} if the floor were $10^6$ wei. Table 2 reports the log-price coefficient for
 completeness.
 
@@ -209,15 +222,26 @@ completeness.
 The design rests on one event, so standard errors clustered by rollup describe cross-rollup noise but not the risk
 of a common shock on the fork date. Our reported intervals therefore come from placebo dates [@conley2011]: we
 apply the identical estimator at each of {h[n_placebo]} placebo break dates between {h[placebo_lo]} and
-{h[placebo_hi]} whose windows exclude Pectra, and invert the distribution of placebo coefficients. The placebo
-standard deviation of $\hat\beta$ is {h[placebo_sd_beta]:.3f}, against a clustered standard error of
-{h[head_se_beta_rollup]:.3f}.
+{h[placebo_hi]} whose windows exclude Pectra, and invert the distribution of placebo coefficients. For the primary
+specification the placebo standard deviation of $\hat\beta$ is {h[placebo_sd_l15]:.3f}, against a clustered
+standard error of {h[l15_se_beta_rollup]:.3f}. The minimum detectable effect of the design, 2.8 placebo standard
+deviations (80% power against a 5% two-sided test), is {h[l15_mde80_pct]:.0f}%.
 
-Clustering by rollup has a second problem. Base supplies most of the blob volume, and in the headline it carries
-95% of the variance of the score. We report the restricted wild score bootstrap of @kline2012, the maximum
-likelihood analogue of the wild cluster bootstrap-t, enumerating all 32,768 Rademacher sign vectors for 15
-clusters. In a simulation with 15 equal clusters and common day shocks it rejects a true null at 7.3% with a
+Clustering by rollup has a second problem. A few rollups supply most of the blob volume: in the primary
+specification Base carries {h[l15_top_cluster_score_share]:.0%} of the variance of the score, and in the intensity
+specification {h[head_top_cluster_score_share]:.0%}. We report the restricted wild score bootstrap of @kline2012,
+the maximum likelihood analogue of the wild cluster bootstrap-t, enumerating all 32,768 Rademacher sign vectors for
+15 clusters. In a simulation with 15 equal clusters and common day shocks it rejects a true null at 7.3% with a
 nominal 5% level.
+
+The two procedures address different problems, and they can disagree. The wild bootstrap corrects the bias of
+clustered standard errors when clusters are few and unequal: it takes the fork date as given and draws its
+uncertainty from the dispersion of rollup-level responses, which is wide when one rollup dominates. Placebo dates
+address the threat that matters most with a single treatment date, a shock common to all rollups that happens to
+coincide with the fork. They measure how often the same estimator, applied to dates with no fork, produces a
+coefficient as large, and that distribution already includes the cross-rollup noise at those dates. It assumes the
+placebo dates are exchangeable with the fork date. We report the placebo interval in the abstract and in the text,
+and the wild bootstrap and clustered intervals beside it in Table 2.
 
 # 7. Results: a bound on the elasticity
 
@@ -225,54 +249,52 @@ Table 2 reports the estimates.
 
 {tbl[t2]}
 
-Blobs per L2 transaction changed by {x[head_pct]:.1f}% when the fee fell to the floor. The reported interval runs
-from {x[head_lo_pct]:.1f}% to {x[head_hi_pct]:+.1f}%, and the placebo permutation p-value is {h[perm_p_beta]:.2f}
-(Figure 2). Removing a price of ${h[head_usd_pre]:.2f} per blob raised blob intensity by at most
-{h[head_mde_pct_placebo]:.1f}%. Under exponential demand this bounds the semi-elasticity at
-{h[head_eta_placebo_lo]:.3f} per mETH per blob and the elasticity at the pre-shock price at
-{h[head_eps_placebo_lo]:.2f}. The wild bootstrap interval is narrower, {x[head_wild_lo_pct]:.1f}% to
-{x[head_wild_hi_pct]:+.1f}%.
+Blob purchases of the 15 rollups rose {x[l15_pct]:.0f}% when the fee fell to the floor (column 1). The reported
+interval runs from {x[l15_ci_pct_lo]:.0f}% to {x[l15_ci_pct_hi]:.0f}%, and no placebo date produced a coefficient
+as large (permutation p below {x[pinv]:.3f}; Figure 2). Removing a price of ${h[head_usd_pre]:.2f} per blob raised
+purchases by at most {h[l15_mde_pct_placebo]:.0f}%. The minimum detectable effect of the design, at 80% power, is
+{h[l15_mde80_pct]:.0f}%, so an increase of the size we estimate is within what the design can detect. Under
+exponential demand the estimate implies a semi-elasticity of {h[l15_eta]:.3f} per mETH per blob and an elasticity
+at the pre-shock price of {h[l15_eps_pre]:.2f}; the elastic end of the interval implies {h[l15_eps_placebo_lo]:.2f}.
+Across all {h[s1_n_rollups]} labelled rollups (column 2) purchases rose {x[s1_pct]:.0f}%.
 
-Unnormalized purchases on the same 15 rollups rose {x[l15_pct]:.0f}% (column 2), and {x[s1_pct]:.0f}% across all
-{h[s1_n_rollups]} labelled rollups (column 3). The placebo interval for column 2, {x[l15_lo_pct]:.0f}% to
-{x[l15_hi_pct]:.0f}%, excludes zero, and no placebo date produced a coefficient as large (permutation p below
-{x[pinv]:.3f}). The wild bootstrap interval, {x[l15_wild_lo_pct]:.0f}% to {x[l15_wild_hi_pct]:.0f}%, does not
-exclude zero. The two procedures disagree about significance; they agree on magnitude. Taking the placebo bound,
-the elasticity of total blob purchases at the pre-shock price is no larger than {h[l15_eps_placebo_lo]:.2f} in
-absolute value. This bound includes any rise in L2 activity caused by the rally in ETH, so it overstates the price
-response if anything.
+The wild bootstrap interval for column 1, {x[l15_wild_lo_pct]:.0f}% to {x[l15_wild_hi_pct]:.0f}%, does not exclude
+zero. For the reasons in Section 6.3 we report the placebo interval: with one treatment date the main risk is a
+common shock, which the placebo dates measure directly. The two procedures disagree about significance and agree
+on magnitude. Neither interval contains an elasticity above 1 in absolute value.
 
-The two columns differ because L2 activity rose while blobs per transaction did not. Normalizing by L2
-transactions would attenuate the estimate if cheaper blobs raised L2 activity; Section 11 examines that channel. For
-the magnitude bound it does not matter: both columns imply demand well inside the inelastic range.
+Blobs bought per L2 transaction changed by {x[head_pct]:.1f}% (column 3), with a reported interval from
+{x[head_lo_pct]:.1f}% to {x[head_hi_pct]:+.1f}%. We do not read this as a price response, because the denominator
+moved with the treatment. It says where the rise in purchases came from: rollups bought more blobs because they
+carried more L2 transactions, and the capacity bought per transaction stayed the same.
 
-![Coefficients at 516 placebo break dates in the first two regimes, same estimator and window. The vertical line is the Pectra estimate.](../output/figures/fig2_placebo.png)
+![Coefficients at 516 placebo break dates in the first two regimes, same estimator and window, for the primary outcome (left) and the per-transaction intensity (right). The vertical line is the Pectra estimate.](../output/figures/fig2_placebo.png)
 
-**Specification curve.** Across {sc[n_specs_intensity]} specifications of the intensity outcome that vary the
-window, trends, the treatment of L2 activity, the estimator, the price measure, day-of-week effects and
-zero-filling, the median semi-elasticity is {sc[int_eta_median]:.3f} per mETH per blob and the 5th to 95th
-percentile range is {sc[int_eta_p05]:.3f} to {sc[int_eta_p95]:.3f} (Figure 3). None of the {sc[off_n_specs]:.0f}
-specifications that treat L2 activity as an offset is significant at 5% even with clustered standard errors, which
-the placebo distribution shows are too small. The headline is less elastic than {sc[head_pctile]:.0%} of these
-specifications; the median specification implies an elasticity of {sc[int_eps_median]:.3f} at the pre-shock price.
-Our conclusion rests on the range, and every part of it is inelastic.
+**Specification curve.** Across {sc[prim_n_specs]} specifications of the primary outcome that vary the window,
+trends, the estimator, the price measure, day-of-week effects and zero-filling, the median elasticity at the
+pre-shock price is {sc[prim_eps_median]:.2f}, and the 5th to 95th percentile range is {sc[prim_eps_p05]:.2f} to
+{sc[prim_eps_p95]:.2f} (Figure 3). No specification implies an elasticity above 1 in absolute value.
+{sc[prim_share_eps_pos]:.0%} have the wrong sign; all of them use the 14-day window, and none of the specifications with
+longer windows does. The primary estimate is less elastic than
+{sc[prim_pctile]:.0%} of the curve. The per-transaction curve (Appendix Figure 7) is centred near zero: its median
+elasticity is {sc[int_eps_median]:.3f}.
 
-![Specification curve for the semi-elasticity of blobs per L2 transaction. Bars: 95% delta-method intervals from clustered errors. Lower panel: choices in each specification.](../output/figures/fig3_spec_curve.png)
+![Specification curve for the semi-elasticity of blob purchases, primary outcome. Bars: 95% delta-method intervals from clustered errors. Lower panel: choices in each specification.](../output/figures/fig3_spec_curve.png)
 
-**Heterogeneity.** Estimated one rollup at a time, {sc[het_n_pos]} of {sc[het_n]} rollups show a rise in
-intensity; the equal-weighted mean is {sc[het_mean_beta]:.3f} log points (Figure 4). Base, with the largest
-volume, has {sc[het_base_beta]:.3f} and pulls the pooled estimate below zero. The sign of the pooled estimate means
-little; its size is what matters.
+**Heterogeneity.** Estimated one rollup at a time, {sc[het_n_pos]} of {sc[het_n]} rollups increased their
+purchases; the equal-weighted mean is {sc[het_mean_beta]:.3f} log points and Base's is {sc[het_base_beta]:.3f}
+(Figure 4). For blobs per L2 transaction the per-rollup estimates split, {sc[het_int_n_pos]} positive, with an
+equal-weighted mean of {sc[het_int_mean_beta]:.3f}.
 
-![Coefficient on Post estimated separately for each rollup, with 95% intervals. Dashed line: pooled estimate.](../output/figures/fig4_heterogeneity.png)
+![Coefficient on Post for blob purchases, estimated separately for each rollup, with 95% intervals. Dashed line: pooled estimate.](../output/figures/fig4_heterogeneity.png)
 
 **A second source of evidence.** In the congested quarters the daily fee had a standard deviation of
 {w[cong_sd_p]:.2f} mETH per blob while usage stayed near target. If demand shifts were as volatile as detrended L2
 activity, whose standard deviation was {w[l2_resid_sd]:.1%}, a fee clearing fixed capacity would move by that
-amount divided by the semi-elasticity. The implied semi-elasticity is {w[implied_eta]:.3f} per mETH per blob, close
-to the specification-curve median. The elastic tail of the curve, near {sc[int_eta_p05]:.2f}, would require daily
+amount divided by the semi-elasticity. The implied semi-elasticity is {w[implied_eta]:.3f} per mETH per blob, less
+elastic than our primary estimate. The elastic tail of the primary curve, near {w[eta_3]:.2f}, would require daily
 demand shifts with a standard deviation of {w[implied_shift_sd_p5]:.0%}. This check is a calibration, and it
-points the same way.
+points toward demand at least as inelastic as we estimate.
 
 **Fusaka.** The reserve's introduction raised the fee from zero to {h[s2_p_post]:.3f} mETH per blob (about
 ${x[s2_usd]:.2f}) for the five days before BPO1; blob purchases per L2 transaction changed by {h[s2_beta]:.3f} log
@@ -319,11 +341,12 @@ e^{{\eta p}}$, calibrated each day to the observed fee and quantity.
 **Slack capacity.** When usage is below target the protocol treats the marginal cost of capacity as zero, and any
 positive fee excludes some purchases worth less than the fee. At the 1-wei floor that loss is zero to machine
 precision. Under the EIP-7918 reserve, when usage averaged {w[reserve_util]:.0%} of target, the loss is the
-triangle between the demand curve and the fee. Table 5 evaluates it at the elastic end of each reported interval
-and at more elastic values from the specification curve. At the headline's bound it is {w[dwl_ci_eth]:.3f} ETH
-(${w[dwl_ci_usd]:,.0f}) over {w[reserve_days]} days. Even with the 5th percentile of the total-demand
-specifications, which we regard as confounded, it is {w[dwl_max_eth]:.2f} ETH (${w[dwl_max_usd]:,.0f}), or
-{w[dwl_max_share]:.0%} of the fees collected under the reserve.
+triangle between the demand curve and the fee. Table 5 evaluates it at the primary estimate, at the elastic ends
+of the reported intervals and at the 5th percentiles of the specification curves. At the primary point estimate it
+is {w[dwl_point_eth]:.2f} ETH (${w[dwl_point_usd]:,.0f}) over {w[reserve_days]} days, and at the elastic end of the
+primary interval {w[dwl_ci_eth]:.2f} ETH (${w[dwl_ci_usd]:,.0f}). Even at the most elastic value in the table it
+is {w[dwl_max_eth]:.2f} ETH (${w[dwl_max_usd]:,.0f}), or {w[dwl_max_share]:.0%} of the fees collected under the
+reserve.
 
 **Binding capacity.** In 2024-Q4 and 2025-Q1 capacity was full and rollups paid {w[fees_cong_eth]:,.0f} ETH
 (${w[fees_cong_usd_m]:.1f} million), {w[fees_cong_share_dencun]:.0%} of all Dencun fees. With capacity fixed at
@@ -335,7 +358,7 @@ clears fixed capacity produces a volatile price, and we do not separate the cont
 demand.
 
 **Capacity.** Pectra cut fees from {w[pectra_fee_pre_eth_day]:.1f} ETH per day (${w[pectra_fee_pre_usd_day]:,.0f})
-to effectively zero with no measurable change in blob intensity. The largest price episode in the sample ended
+to effectively zero while purchases rose {x[l15_pct]:.0f}%. The largest price episode in the sample ended
 with a capacity increase, and the transfer ended with it.
 
 {tbl[t4a]}
@@ -363,7 +386,8 @@ rollups.
 # 11. Exploratory analysis: pass-through to L2 users (post hoc)
 
 This section was not part of the specification fixed before estimation. We added it after the data contradicted
-an assumption behind that specification, namely that blob costs are too small to affect L2 fees. They are not. Before Pectra,
+an assumption behind that specification, namely that blob costs are too small to affect L2 fees. They are not, and
+this is the finding that led us to change the primary outcome (Section 6.2). Before Pectra,
 blob cost per L2 transaction on OP Stack chains was of the same order as the entire median L2 fee. We treat what
 follows as motivation for a separate, pre-specified study.
 
@@ -378,15 +402,19 @@ The pattern fits demand for blobs derived from demand for L2 transactions, with 
 users. The evidence is thin. It rests on one event, the activity effect clears the placebo distribution only at
 the 10% level, most comparison chains use their own gas tokens, and OP Stack's Isthmus upgrade arrived the same
 week. A second supply shock in a congested market, or rollup-level fee data at higher frequency, would settle it.
-If the channel is real, its implied semi-elasticity of {pt[eta_activity_margin]:.2f} per mETH per blob is less
-elastic than values already in Table 5, so the welfare accounting does not change.
+If the channel is real, it accounts for the rise in blob purchases in Table 2 and makes blob demand derived
+demand: rollups pass the price on, and their users decide how much capacity is bought. Its implied semi-elasticity
+of {pt[eta_activity_margin]:.2f} per mETH per blob is less elastic than values already in Table 5, so the welfare
+accounting does not change. We do not treat this as a second finding. It is the open question with which the paper
+ends.
 
 ![Change in median L2 fee and in L2 transactions, 28 days after against 28 days before Pectra, by chain. Post hoc. Source: growthepie, CC BY 4.0.](../output/figures/fig6_passthrough.png)
 
 # 12. Limitations
 
 The design rests on a single event. Placebo dates measure how unusual the estimate is, but they cannot rule out a
-shock specific to 7 May 2025. Pectra also raised the cost of calldata [@eip7623]. A rollup still posting calldata
+shock specific to 7 May 2025. The ETH rally that began the next day is one such shock; it would raise L2 activity
+and blob purchases, which is why we read the primary estimate as an upper bound on the price response. Pectra also raised the cost of calldata [@eip7623]. A rollup still posting calldata
 would have moved to blobs for that reason, which would bias the measured response upward; the bound is
 conservative in that direction.
 
@@ -407,13 +435,18 @@ welfare totals and one robustness check but not the rollup-level regressions.
 
 # 13. Conclusion
 
-Rollups barely respond to the price of blob capacity at the margin they control. Removing a price of
-${h[head_usd_pre]:.2f} per blob changed their purchases per L2 transaction by at most
-{h[head_mde_pct_placebo]:.1f}%. With demand this inelastic, Ethereum's mechanical blob price has worked mostly as
-a transfer: {w[fees_dencun_eth]:,.0f} ETH burned under the first regime, most of it as scarcity rent on full
-capacity, against allocative losses measured in single ETH where capacity was slack. For the design of blob
-pricing, this shifts the question from allocative efficiency to revenue, volatility and capacity. The one open
-empirical question is whether rollups' users respond where rollups do not.
+Rollups' purchases of blob capacity respond weakly to its price. Removing a price of ${h[head_usd_pre]:.2f} per blob
+raised purchases by {x[l15_pct]:.0f}%, and by no more than {h[l15_mde_pct_placebo]:.0f}%, which puts the elasticity
+at the pre-shock price between {h[l15_eps_placebo_lo]:.2f} and zero. With demand this inelastic, Ethereum's
+mechanical blob price has worked mostly as a transfer: {w[fees_dencun_eth]:,.0f} ETH burned under the first regime,
+most of it as scarcity rent on full capacity, against allocative losses measured in single ETH where capacity was
+slack. For the design of blob pricing, this shifts the question from allocative efficiency to revenue, volatility
+and capacity.
+
+The response we do measure came through L2 activity: blobs per L2 transaction did not change. Whether that
+activity rose because rollups passed the lower price on to their users, as the post hoc evidence in Section 11
+suggests, or because of the market rally that began the next day, is the question this design cannot settle. A
+pre-specified test on the next supply shock that arrives in a congested market would.
 
 # Data availability
 
@@ -432,6 +465,8 @@ block's update fraction; the BPO1 activation block is consistent only with this 
 results for {x[n_blocks_checked]:,} blocks.
 
 {tbl[ta]}
+
+![Specification curve for the semi-elasticity of blobs per L2 transaction (intensity margin). Bars: 95% delta-method intervals from clustered errors. Lower panel: choices in each specification.](../output/figures/figA1_spec_curve_intensity.png)
 
 Each regime's own rule explains every block. Five reserve comparisons fall within 3 wei of equality and are not
 scored. The cross-rule columns show that the rules are distinguishable: the EIP-4844 rule mispredicts
