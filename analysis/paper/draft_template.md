@@ -99,17 +99,32 @@ customers' transactions. The question also differs: we ask what the mechanical p
 demand elasticity, and prior work does not estimate it for blobs.
 
 Work on the blob market itself is recent. @crapis2023 analyse the economics of EIP-4844 and rollups' posting
-strategies, including sharing blobs. @mamageishvili2023 derive batch-posting strategies for rollups facing a
-variable base-layer price. @park2024 describe the first months of the blob market, including rollup transaction
-dynamics and the blob fee. @albassam2018 set out the data-availability problem that makes rollups buy this
-capacity at all. We add a design-based elasticity estimate and a welfare accounting built on it.
+strategies, including sharing blobs, and @lee2025 show with data from its first six months that the fixed 128 KiB
+blob forces small rollups either to post partly empty blobs or to post less often. @mamageishvili2023 derive
+batch-posting strategies for rollups facing a variable base-layer price. @park2024 describe the first months of
+the blob market, including rollup transaction dynamics and the blob fee. @huang2024 document the migration of
+rollups from calldata to blobs and model the game between block builders and rollups, finding that a large share
+of blob-carrying blocks are packed suboptimally. @heimbach2025 study transaction- and mempool-level data from the
+early blob fee market, measure the fee loss from suboptimal block packing, and examine its congested peak
+periods. @ambrosia2026 trace transaction costs and throughput on Ethereum and its L2s from January 2024 to March
+2026, a period close to ours, and find that median L2 fees fell by more than 95% as blob capacity grew.
+@albassam2018 set out the data-availability problem that makes rollups buy this capacity at all. We add a
+design-based elasticity estimate and a welfare accounting built on it.
 
-The welfare question connects to the comparison of prices and quantities as control instruments [@weitzman1974]
-and to the empirical comparison of posted prices and auctions [@einav2018]. The blob controller is a hybrid: a
+Two other strands are close. @eziz2025 estimates how L2 adoption relieved congestion on the Ethereum mainnet
+across the London, Merge and Dencun upgrades, and @gogol2024 study rollup performance and costs during the
+inscription boom and the arrival of blobs. On the L2 side, @chaliasos2025 show that rollup fee mechanisms must
+price L1 data availability alongside execution, and that mispricing it opens attacks; that pricing is the channel
+through which the blob fee reaches L2 users in Section 11.
+
+The welfare question connects to the comparison of prices and quantities as control instruments [@weitzman1974],
+to the empirical comparison of posted prices and auctions [@einav2018], and to the design of dynamic fee rules for
+blockchain resources, where @crapis2023dynamic derive optimal update policies and use EIP-4844 as a case study. The blob controller is a hybrid: a
 quantity target enforced by a price that adjusts with a lag. Our finding that demand is inelastic places it in the
 region where the choice of instrument matters for revenue and volatility much more than for allocation.
 
-On method, we follow the regression-discontinuity-in-time literature on short windows and trend flexibility
+On method, our design is an event study around a protocol upgrade, as in @kapengut2023 for Ethereum's move to
+proof of stake. We follow the regression-discontinuity-in-time literature on short windows and trend flexibility
 [@hausman2018], estimate count outcomes by Poisson pseudo-maximum likelihood [@santossilva2006], base inference
 for a single event on placebo dates [@conley2011], report wild cluster bootstraps for few clusters
 [@cameron2008; @kline2012; @mackinnon2017; @roodman2019], and summarise sensitivity with a specification curve
@@ -326,7 +341,10 @@ them out. Within rollup and day, the floor changed the probability of missing th
 {mp[reg_dencun_waited_mean_base]:.2f} and {mp[reg_pectra_waited_mean_base]:.2f}.
 
 Missing the first block is common in every state. Our definition of the first eligible block allows no time for
-block building, so part of the base rate is mechanical. Of the delayed floor transactions, {x[floor_full_share]:.0%} met at least
+block building, so part of the base rate is mechanical. Block building matters for the rest: a few builders
+produce most Ethereum blocks [@mizrach2025], and studies of the blob market find that builders often pack
+blob-carrying blocks suboptimally [@huang2024; @heimbach2025]. @soltani2024 model blob-transaction delay as a
+queue; our measurements give its empirical counterpart and show that, at the floor, the queue is short. Of the delayed floor transactions, {x[floor_full_share]:.0%} met at least
 one full block: usage arrives in bursts, and a block can fill even when the running excess is zero. The delay in
 those cases is about one block, 12 seconds. Pricing out is a feature of congestion. In congested Dencun states
 {mp[dencun_cong_share_passed_blocks_priced_out]:.0%} of missed blocks priced the transaction out.
@@ -396,7 +414,10 @@ and day fixed effects over the same window (N = {pt[n_obs]:,} chain-days). Day e
 users' median L2 fees changed by {x[fee_pct]:.0f}% relative to the comparison chains (SE {pt[se_fee]:.2f} log points,
 placebo p = {pt[p_fee]:.2f}), and their L2 transactions rose {x[act_pct]:.0f}% (SE {pt[se_act]:.2f} log points,
 placebo p = {pt[p_act]:.2f}). Within blob users, activity rose more where fees fell more: the slope is
-{pt[dose_b]:.3f} (SE {pt[dose_se]:.3f}, N = {pt[dose_n]} chains). Figure 6 plots the chain-level changes.
+{pt[dose_b]:.3f} (SE {pt[dose_se]:.3f}, N = {pt[dose_n]} chains). Figure 6 plots the chain-level changes. Over a
+longer horizon, @ambrosia2026 document the same direction of movement: median L2 fees fell by more than 95%
+between January 2024 and March 2026 as Ethereum's blob capacity grew. Their evidence is descriptive and covers
+many upgrades at once, so it supports the pass-through channel without identifying it.
 
 The pattern fits demand for blobs derived from demand for L2 transactions, with the price passed through to L2
 users. The evidence is thin. It rests on one event, the activity effect clears the placebo distribution only at
@@ -423,7 +444,8 @@ higher fees carried {h[ev_share_fees_above]:.0%} of the fees paid in the first t
 elastic at those prices.
 
 We observe capacity bought; payload is unobserved. Rollups can respond to price by filling blobs more fully, and our
-outcome captures that margin only through the number of blobs bought.
+outcome captures that margin only through the number of blobs bought. For small rollups the margin is coarse:
+with a fixed 128 KiB blob they choose between partly empty blobs and less frequent posting [@lee2025].
 
 Rollup-level migration between data-availability layers is not observable here. Celenium, the Celestia indexer
 that would provide rollup-level usage of Celestia, blocks our collection host, and no alternative source was

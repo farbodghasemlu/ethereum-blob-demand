@@ -311,3 +311,13 @@ README.md. The draft then matched the bundle file by file (18 files, server MD5)
 corrections in D-37, and the full analysis re-run on the bundle rendered a byte-identical paper. Publishing
 required publishing the host collection first. The published dataset is CC BY 4.0 with 18 files; its public
 whole-dataset download verifies against MANIFEST-SHA256.txt.
+
+**D-39 · Literature search and eleven added references (2026-10-10).** The bibliography had been built from works
+we knew and then verified, without a systematic search, and it missed directly related work. We searched arXiv
+(EIP-4844, blob fees and gas, Dencun, proto-danksharding, rollup posting and fees, data availability, EIP-1559
+empirics, EIP-7918 and EIP-7691) and Crossref (author Mizrach on Ethereum topics), read the abstracts of the
+candidates, and added those that bear on our argument: Ambrosia and Mizrach (2026), Kapengut and Mizrach (2023),
+Mizrach and Yoshida (2025), Heimbach and Milionis (2025), Huang et al. (2024), Soltani and Ashtiani (2024), Lee
+(2025), Crapis, Moallemi and Wang (2023), Chaliasos et al. (2025), Eziz (2025) and Gogol et al. (2024). Each is
+described only as far as its abstract supports. Metadata were verified against Crossref or the arXiv API; Lee is
+cited in its published ICDCS Workshops version, the others as preprints. No estimate or number changes.
