@@ -1,6 +1,6 @@
 ---
 title: "Demand Under a Mechanical Price: Elasticity and Welfare in Ethereum's Data-Availability Market"
-author: "Farbod Ghasemlu, Independent Researcher, ORCID [0009-0009-2303-5672](https://orcid.org/0009-0009-2303-5672)"
+author: 'Farbod Ghasemlu\thanks{{Independent researcher. Email: \href{{mailto:farbodghasemlu@outlook.com}}{{farbodghasemlu@outlook.com}}. ORCID: \href{{https://orcid.org/0009-0009-2303-5672}}{{0009-0009-2303-5672}}.}}'
 date: "September 2026"
 bibliography: references.bib
 ---
@@ -119,7 +119,13 @@ through which the blob fee reaches L2 users in Section 11.
 
 The welfare question connects to the comparison of prices and quantities as control instruments [@weitzman1974],
 to the empirical comparison of posted prices and auctions [@einav2018], and to the design of dynamic fee rules for
-blockchain resources, where @crapis2023dynamic derive optimal update policies and use EIP-4844 as a case study. The blob controller is a hybrid: a
+blockchain resources, where @crapis2023dynamic derive optimal update policies and use EIP-4844 as a case study. A
+parallel literature derives optimal dynamic trading fees for automated market makers. In @baggiani2025 a venue
+that maximises its fee revenue raises fees when external prices signal arbitrage and lowers them to attract noise
+traders; in @ghasemlu2026 a liquidity provider's growth-optimal fee rises with volatility and is constant when
+volatility is. In both, the fee is chosen to serve an objective given how traders respond. The blob fee instead
+moves by a fixed rule toward a quantity target and never consults demand, which is why the demand
+elasticity determines what the rule costs. The blob controller is a hybrid: a
 quantity target enforced by a price that adjusts with a lag. Our finding that demand is inelastic places it in the
 region where the choice of instrument matters for revenue and volatility much more than for allocation.
 
@@ -481,8 +487,8 @@ pre-specified test on the next supply shock that arrives in a congested market w
 # Data availability
 
 The data are published at Harvard Dataverse, doi:10.7910/DVN/4AOXKT, version 1.0, under a CC BY 4.0 licence
-[@dataverse]. Exchange price data are not redistributed; the pipeline's price script regenerates them. The replication package regenerates every number, table and figure from the deposit with
-one command. Blob transaction data are indexed by Blobscan [@blobscan], with batcher labels from blob-list (CC0) [@bloblist]. L2 fundamentals are from growthepie
+[@dataverse]. Exchange price data are not redistributed; the pipeline's price script regenerates them. The replication package, at <https://github.com/farbodghasemlu/ethereum-blob-demand>, regenerates every number,
+table and figure from the deposit with one command. Blob transaction data are indexed by Blobscan [@blobscan], with batcher labels from blob-list (CC0) [@bloblist]. L2 fundamentals are from growthepie
 (CC BY 4.0) [@growthepie]. Mempool observations are from Xatu / ethPandaOps (CC BY 4.0) [@xatu]. The specification
 fixed before estimation (commit `811ab9b`), the decision log and the specification curve are in the replication
 repository.
