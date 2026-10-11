@@ -321,3 +321,20 @@ Mizrach and Yoshida (2025), Heimbach and Milionis (2025), Huang et al. (2024), S
 (2025), Crapis, Moallemi and Wang (2023), Chaliasos et al. (2025), Eziz (2025) and Gogol et al. (2024). Each is
 described only as far as its abstract supports. Metadata were verified against Crossref or the arXiv API; Lee is
 cited in its published ICDCS Workshops version, the others as preprints. No estimate or number changes.
+
+**D-40 · Citation corrections after checking the cited papers' full texts (2026-10-11).** (a) Ambrosia and Mizrach
+(2026) is a time-series analysis, not only descriptive: their Table 7 regresses the log median fee of Arbitrum, Base
+and Optimism on the blob target (daily, 2025-01-01 to 2026-03-31, HAC errors, no other regressors) and reports a
+coefficient of −0.0476. We quote that coefficient (about 4.6% per target blob); their summary text states 4.3%,
+which does not match the table. (b) Eziz (2025) gives causal estimates for the pre-Dencun window only and treats
+blob-era estimates as exploratory; our sentence now says so. (c) Huang et al. (2024) report that 29.48% of
+blob-carrying blocks are built in a way that earns the builder less than an available alternative; "suboptimal
+packing" with measured fee loss is Heimbach and Milionis (2025). The text now attributes each finding to its
+source. (d) We add Bergault, Hafsi and Sánchez-Betancourt (2026) and Capponi, Cartea and Drissi (2026) to
+Section 8. Both are models of priority fees and queue position for traders, so the text draws a parallel and
+claims no overlap in object. (e) Blob counts: Ambrosia and Mizrach describe average usage of one to two blobs per
+block; our Table 1 has 2.53 to 5.09. Over their window our data give blob-carrying transactions per block of
+1.17 (Dencun), 1.62 (Pectra), 1.86 (BPO1) and 1.60 (BPO2), which matches their description, so their series likely
+counts transactions rather than blobs; their paper does not name the field. Our counts are header blob gas
+divided by 131,072, reconcile with the transaction-level sums, and are the inputs under which the protocol's
+update rule explains every block (D-30). No estimate or number in our paper changes.

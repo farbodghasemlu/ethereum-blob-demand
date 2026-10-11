@@ -103,8 +103,8 @@ strategies, including sharing blobs, and @lee2025 show with data from its first 
 blob forces small rollups either to post partly empty blobs or to post less often. @mamageishvili2023 derive
 batch-posting strategies for rollups facing a variable base-layer price. @park2024 describe the first months of
 the blob market, including rollup transaction dynamics and the blob fee. @huang2024 document the migration of
-rollups from calldata to blobs and model the game between block builders and rollups, finding that a large share
-of blob-carrying blocks are packed suboptimally. @heimbach2025 study transaction- and mempool-level data from the
+rollups from calldata to blobs and model the game between block builders and rollups; they find that 29.5% of
+blob-carrying blocks are built in a way that earns the builder less revenue than an available alternative. @heimbach2025 study transaction- and mempool-level data from the
 early blob fee market, measure the fee loss from suboptimal block packing, and examine its congested peak
 periods. @ambrosia2026 trace transaction costs and throughput on Ethereum and its L2s from January 2024 to March
 2026, a period close to ours, and find that median L2 fees fell by more than 95% as blob capacity grew.
@@ -112,7 +112,7 @@ periods. @ambrosia2026 trace transaction costs and throughput on Ethereum and it
 design-based elasticity estimate and a welfare accounting built on it.
 
 Two other strands are close. @eziz2025 estimates how L2 adoption relieved congestion on the Ethereum mainnet
-across the London, Merge and Dencun upgrades, and @gogol2024 study rollup performance and costs during the
+before Dencun, and treats the estimates for the blob era as exploratory, and @gogol2024 study rollup performance and costs during the
 inscription boom and the arrival of blobs. On the L2 side, @chaliasos2025 show that rollup fee mechanisms must
 price L1 data availability alongside execution, and that mispricing it opens attacks; that pricing is the channel
 through which the blob fee reaches L2 users in Section 11.
@@ -342,9 +342,14 @@ them out. Within rollup and day, the floor changed the probability of missing th
 
 Missing the first block is common in every state. Our definition of the first eligible block allows no time for
 block building, so part of the base rate is mechanical. Block building matters for the rest: a few builders
-produce most Ethereum blocks [@mizrach2025], and studies of the blob market find that builders often pack
-blob-carrying blocks suboptimally [@huang2024; @heimbach2025]. @soltani2024 model blob-transaction delay as a
-queue; our measurements give its empirical counterpart and show that, at the floor, the queue is short. Of the delayed floor transactions, {x[floor_full_share]:.0%} met at least
+produce most Ethereum blocks [@mizrach2025], @huang2024 find that builders construct many blob-carrying blocks
+in ways that earn less than an available alternative, and @heimbach2025 measure fee losses from suboptimal
+packing of blobs into blocks. @soltani2024 model blob-transaction delay as a queue; our measurements give its
+empirical counterpart and show that, at the floor, the queue is short. Recent models of on-chain trading treat
+delay and queue position as something users buy: in @bergault2026 the priority fee controls the distribution
+of execution delay, and in @capponi2026 paid priority and discrete block clearing determine which traders
+participate. For blob transactions at the floor, the delay we measure is about one block and the blob fee almost
+never decides it. Of the delayed floor transactions, {x[floor_full_share]:.0%} met at least
 one full block: usage arrives in bursts, and a block can fill even when the running excess is zero. The delay in
 those cases is about one block, 12 seconds. Pricing out is a feature of congestion. In congested Dencun states
 {mp[dencun_cong_share_passed_blocks_priced_out]:.0%} of missed blocks priced the transaction out.
@@ -415,9 +420,12 @@ users' median L2 fees changed by {x[fee_pct]:.0f}% relative to the comparison ch
 placebo p = {pt[p_fee]:.2f}), and their L2 transactions rose {x[act_pct]:.0f}% (SE {pt[se_act]:.2f} log points,
 placebo p = {pt[p_act]:.2f}). Within blob users, activity rose more where fees fell more: the slope is
 {pt[dose_b]:.3f} (SE {pt[dose_se]:.3f}, N = {pt[dose_n]} chains). Figure 6 plots the chain-level changes. Over a
-longer horizon, @ambrosia2026 document the same direction of movement: median L2 fees fell by more than 95%
-between January 2024 and March 2026 as Ethereum's blob capacity grew. Their evidence is descriptive and covers
-many upgrades at once, so it supports the pass-through channel without identifying it.
+longer horizon, @ambrosia2026 reach the same conclusion with time-series estimates across several upgrades.
+Median L2 fees fell by more than 95% between January 2024 and March 2026 as Ethereum's blob capacity grew, and
+in a regression of the log median fee of the three largest L2s on the blob target, from January 2025 to March
+2026, each additional target blob goes with a fall of 0.048 in log fees, about 4.6% (their Table 7). Because
+the blob target changed only at a few dates in that window, their estimate supports the pass-through channel
+without separating it from other changes over the same months.
 
 The pattern fits demand for blobs derived from demand for L2 transactions, with the price passed through to L2
 users. The evidence is thin. It rests on one event, the activity effect clears the placebo distribution only at
